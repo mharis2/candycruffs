@@ -34,7 +34,9 @@ app.use(express.json());
 // Email Transporter Setup
 // In production, use environment variables. For dev, we'll log if missing.
 const transporter = nodemailer.createTransport({
-    service: 'gmail', // Or use host/port for other providers
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -81,19 +83,23 @@ Total: $${total}
 (Note: Payment to be collected manually)
         `;
 
-        // Send Email
+        // Send Email (Fire and forget - don't wait for it)
         if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-            await transporter.sendMail({
+            transporter.sendMail({
                 from: process.env.EMAIL_USER,
-                to: 'harismuhammad455@gmail.com', // Hardcoded as requested
+                to: 'harismuhammad455@gmail.com',
                 subject: `New Candy Cruffs Order from ${customer.name}`,
                 text: emailContent
+            }).then(() => {
+                console.log('Order email sent successfully');
+            }).catch(err => {
+                console.error('Failed to send email:', err);
             });
-            console.log('Order email sent successfully');
         } else {
-            console.log('Email credentials missing, skipping email send. Order details:', emailContent);
+            console.log('Email credentials missing, skipping email send.');
         }
 
+        // Respond immediately
         res.status(200).json({ message: 'Order received successfully' });
 
     } catch (error) {
