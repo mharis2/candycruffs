@@ -26,6 +26,8 @@ const Order = () => {
         if (initialProductId) {
             setQuantities(prev => ({ ...prev, [initialProductId]: 1 }));
         }
+        // Scroll to top on mount
+        window.scrollTo(0, 0);
     }, [initialProductId]);
 
     const updateQuantity = (id, delta) => {
@@ -335,6 +337,17 @@ const Order = () => {
                                         />
                                     </motion.div>
                                 )}
+
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Additional Notes (Optional)</label>
+                                    <textarea
+                                        rows="2"
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
+                                        placeholder="Any special requests or details?"
+                                        value={formData.notes}
+                                        onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                    />
+                                </div>
 
                                 <Button
                                     type="submit"

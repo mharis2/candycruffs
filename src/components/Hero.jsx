@@ -13,8 +13,15 @@ const Hero = () => {
     });
 
     const yBg = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
-    const yText = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
-    const yVisual = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
+    // Removed text/visual parallax to prevent overlap on mobile
+
+    const scrollToFlavors = (e) => {
+        e.preventDefault();
+        const flavorsSection = document.getElementById('flavors');
+        if (flavorsSection) {
+            flavorsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
 
     return (
         <section ref={ref} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 pb-16 lg:pt-32 lg:pb-24 bg-gradient-to-b from-background to-white">
@@ -28,7 +35,6 @@ const Hero = () => {
                 <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
                     {/* Text Content */}
                     <motion.div
-                        style={{ y: yText }}
                         className="text-center lg:text-left order-2 lg:order-1"
                     >
                         <Reveal>
@@ -62,18 +68,17 @@ const Hero = () => {
                                         <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                                     </Button>
                                 </Link>
-                                <a href="#flavors">
-                                    <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                                <button onClick={scrollToFlavors} className="w-full sm:w-auto">
+                                    <Button variant="outline" size="lg" className="w-full pointer-events-none">
                                         View Flavors
                                     </Button>
-                                </a>
+                                </button>
                             </div>
                         </Reveal>
                     </motion.div>
 
                     {/* Visual Content */}
                     <motion.div
-                        style={{ y: yVisual }}
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
