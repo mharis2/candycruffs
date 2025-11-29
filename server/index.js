@@ -36,11 +36,21 @@ app.use(express.json());
 // Email Transporter Setup
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // Use STARTTLS
+    port: 465,
+    secure: true,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
+    },
+    family: 4 // Force IPv4 to prevent timeouts on some cloud providers
+});
+
+// Verify connection on startup
+transporter.verify(function (error, success) {
+    if (error) {
+        console.log('Transporter connection error:', error);
+    } else {
+        console.log("Server is ready to send emails");
     }
 });
 
