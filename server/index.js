@@ -33,14 +33,20 @@ app.use(express.json());
 
 // Email Transporter Setup
 // In production, use environment variables. For dev, we'll log if missing.
+// Email Transporter Setup
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false, // Use STARTTLS
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     }
+});
+
+// Root Endpoint
+app.get('/', (req, res) => {
+    res.send('Candy Cruffs API is running!');
 });
 
 // Health Check Endpoint
