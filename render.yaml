@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: candy-cruffs-api
+    runtime: node
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install
+    startCommand: node server/index.js
+    envVars:
+      - key: EMAIL_USER
+        value: harismuhammad455@gmail.com
+      - key: EMAIL_PASS
+        sync: false
+      - key: PORT
+        value: 3001
