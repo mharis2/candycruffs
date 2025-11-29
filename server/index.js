@@ -34,21 +34,28 @@ app.use(express.json());
 // Email Transporter Setup
 // In production, use environment variables. For dev, we'll log if missing.
 // Email Transporter Setup
+console.log('Initializing transporter...');
+console.log('EMAIL_USER present:', !!process.env.EMAIL_USER);
+console.log('EMAIL_PASS present:', !!process.env.EMAIL_PASS);
+
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false, // Use STARTTLS
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     },
-    family: 4 // Force IPv4 to prevent timeouts on some cloud providers
+    family: 4, // Force IPv4
+    logger: true, // Log to console
+    debug: true   // Include SMTP traffic in logs
 });
 
 // Verify connection on startup
+console.log('Verifying SMTP connection...');
 transporter.verify(function (error, success) {
     if (error) {
-        console.log('Transporter connection error:', error);
+        console.error('Transporter connection error:', error);
     } else {
         console.log("Server is ready to send emails");
     }
