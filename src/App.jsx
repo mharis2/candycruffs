@@ -8,7 +8,8 @@ import Flavors from './components/Flavors';
 import Testimonials from './components/Testimonials';
 import HowItWorks from './components/HowItWorks';
 import FAQ from './components/FAQ';
-import Order from './pages/Order'; // We will create this next
+import Order from './pages/Order';
+import Contact from './pages/Contact';
 
 function Home() {
     return (
@@ -22,6 +23,8 @@ function Home() {
         </>
     );
 }
+
+import ScrollToTop from './components/ScrollToTop';
 
 function App() {
     useEffect(() => {
@@ -50,10 +53,12 @@ function App() {
 
     return (
         <Router>
+            <ScrollToTop />
             <Layout>
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/order" element={<Order />} />
+                    <Route path="/contact" element={<Contact />} />
                 </Routes>
             </Layout>
         </Router>

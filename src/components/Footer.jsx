@@ -24,18 +24,23 @@ const Footer = () => {
                     <div>
                         <h4 className="font-bold mb-4">Shop</h4>
                         <ul className="space-y-2 text-gray-400">
-                            <li><a href="#" className="hover:text-white transition-colors">All Flavors</a></li>
-                            <li><a href="#" className="hover:text-white transition-colors">Bundles</a></li>
-                            <li><a href="#" className="hover:text-white transition-colors">Gift Cards</a></li>
+                            <li><Link to="/order" className="hover:text-white transition-colors">Order Now</Link></li>
+                            <li>
+                                <span className="hover:text-white transition-colors cursor-not-allowed opacity-70">Bundles</span>
+                                <span className="ml-2 text-[10px] bg-gray-800 text-gray-300 px-1.5 py-0.5 rounded border border-gray-700">SOON</span>
+                            </li>
+                            <li>
+                                <span className="hover:text-white transition-colors cursor-not-allowed opacity-70">Gift Cards</span>
+                                <span className="ml-2 text-[10px] bg-gray-800 text-gray-300 px-1.5 py-0.5 rounded border border-gray-700">SOON</span>
+                            </li>
                         </ul>
                     </div>
 
                     <div>
                         <h4 className="font-bold mb-4">Support</h4>
                         <ul className="space-y-2 text-gray-400">
-                            <li><a href="#" className="hover:text-white transition-colors">FAQ</a></li>
-                            <li><a href="#" className="hover:text-white transition-colors">Shipping</a></li>
-                            <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
+                            <li><Link to="/#faq" className="hover:text-white transition-colors">FAQ</Link></li>
+                            <li><Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
                         </ul>
                     </div>
                 </div>

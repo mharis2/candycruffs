@@ -113,6 +113,48 @@ Total: $${total}
     }
 });
 
+// Contact Endpoint
+app.post('/api/contact', async (req, res) => {
+    try {
+        const { name, email, message } = req.body;
+
+        if (!name || !email || !message) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        const emailContent = `
+New Contact Message!
+
+From: ${name} (${email})
+
+Message:
+${message}
+        `;
+
+        // Send Email
+        if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+            transporter.sendMail({
+                from: process.env.EMAIL_USER,
+                to: 'harismuhammad455@gmail.com',
+                subject: `New Contact Message from ${name}`,
+                text: emailContent
+            }).then(() => {
+                console.log('Contact email sent successfully');
+            }).catch(err => {
+                console.error('Failed to send contact email:', err);
+            });
+        } else {
+            console.log('Email credentials missing, skipping email send.');
+        }
+
+        res.status(200).json({ message: 'Message received' });
+
+    } catch (error) {
+        console.error('Error processing contact message:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });

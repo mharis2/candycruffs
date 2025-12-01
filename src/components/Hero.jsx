@@ -35,17 +35,17 @@ const Hero = () => {
                 <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
                     {/* Text Content */}
                     <motion.div
-                        className="text-center lg:text-left order-2 lg:order-1"
+                        className="text-left lg:text-left order-2 lg:order-1"
                     >
                         <Reveal>
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-100 shadow-sm mb-6 mx-auto lg:mx-0">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-100 shadow-sm mb-6 mr-auto lg:mx-0">
                                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                                 <span className="text-sm font-bold text-gray-600 tracking-wide uppercase">Halal Ingredients</span>
                             </div>
                         </Reveal>
 
                         <Reveal delay={0.2}>
-                            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-display font-extrabold tracking-tight text-gray-900 mb-6 leading-[1.1]">
+                            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-display font-extrabold tracking-tight text-gray-900 mb-6 leading-[1.1] text-left lg:text-left">
                                 Airy, Crunchy, <br />
                                 <span className="text-primary">
                                     Halal Treats.
@@ -54,14 +54,14 @@ const Hero = () => {
                         </Reveal>
 
                         <Reveal delay={0.4}>
-                            <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                            <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mr-auto lg:mx-0 leading-relaxed text-left">
                                 Experience the wonder of freeze-dried candy. Intense flavor, airy texture, and a crunch that melts in your mouth.
                                 <span className="block mt-2 font-medium text-primary">Locally made in Edmonton, AB.</span>
                             </p>
                         </Reveal>
 
                         <Reveal delay={0.6}>
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                            <div className="flex flex-col sm:flex-row gap-4 justify-start lg:justify-start">
                                 <Link to="/order">
                                     <Button size="lg" className="group w-full sm:w-auto shadow-lg shadow-primary/25 hover:shadow-primary/40">
                                         Order Now

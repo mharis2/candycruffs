@@ -5,6 +5,7 @@ import { products } from '../data/products';
 import Button from '../components/ui/Button';
 import Reveal from '../components/ui/Reveal';
 import { Plus, Minus, ShoppingBag, Truck, CheckCircle, AlertCircle, PartyPopper } from 'lucide-react';
+import AddressAutocomplete from '../components/AddressAutocomplete';
 
 const Order = () => {
     const [searchParams] = useSearchParams();
@@ -328,12 +329,10 @@ const Order = () => {
                                         exit={{ height: 0, opacity: 0 }}
                                     >
                                         <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Address</label>
-                                        <textarea
+                                        <AddressAutocomplete
                                             required={!isPickup}
-                                            rows="3"
-                                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
                                             value={formData.address}
-                                            onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                            onChange={(val) => setFormData({ ...formData, address: val })}
                                         />
                                     </motion.div>
                                 )}
