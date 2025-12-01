@@ -39,16 +39,14 @@ console.log('EMAIL_USER present:', !!process.env.EMAIL_USER);
 console.log('EMAIL_PASS present:', !!process.env.EMAIL_PASS);
 
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // Use STARTTLS
+    service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     },
     family: 4, // Force IPv4
-    logger: true, // Log to console
-    debug: true   // Include SMTP traffic in logs
+    logger: true,
+    debug: true
 });
 
 // Verify connection on startup
