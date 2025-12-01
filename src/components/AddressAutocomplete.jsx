@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader } from '@googlemaps/js-api-loader';
-import { MapPin, Loader2 } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 
 const AddressAutocomplete = ({ value, onChange, required = false }) => {
     const [inputValue, setInputValue] = useState(value || '');
@@ -21,16 +20,36 @@ const AddressAutocomplete = ({ value, onChange, required = false }) => {
             return;
         }
 
-        const loader = new Loader({
-            apiKey: apiKey,
-            version: 'weekly',
-            libraries: ['places']
-        });
+        // Load Google Maps script
+        const loadGoogleMaps = async () => {
+            try {
+                // Check if already loaded
+                if (window.google?.maps?.places) {
+                    initAutocomplete();
+                    return;
+                }
 
-        loader.load().then(() => {
-            if (!inputRef.current) return;
+                // Create script element
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initMap`;
+                script.async = true;
+                script.defer = true;
 
-            const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
+                // Set up callback
+                window.initMap = () => {
+                    initAutocomplete();
+                };
+
+                document.head.appendChild(script);
+            } catch (error) {
+                console.error('Error loading Google Maps:', error);
+            }
+        };
+
+        const initAutocomplete = () => {
+            if (!inputRef.current || !window.google?.maps?.places) return;
+
+            const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
                 componentRestrictions: { country: 'ca' },
                 fields: ['formatted_address', 'address_components'],
                 types: ['address']
@@ -45,13 +64,13 @@ const AddressAutocomplete = ({ value, onChange, required = false }) => {
             });
 
             autocompleteRef.current = autocomplete;
-        }).catch(error => {
-            console.error('Error loading Google Maps:', error);
-        });
+        };
+
+        loadGoogleMaps();
 
         return () => {
-            if (autocompleteRef.current) {
-                google.maps.event.clearInstanceListeners(autocompleteRef.current);
+            if (autocompleteRef.current && window.google?.maps?.event) {
+                window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
             }
         };
     }, [onChange]);
