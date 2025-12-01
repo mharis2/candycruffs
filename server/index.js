@@ -92,7 +92,7 @@ Total: $${total}
         if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
             transporter.sendMail({
                 from: process.env.EMAIL_USER,
-                to: 'harismuhammad455@gmail.com',
+                to: 'candycruffs@gmail.com',
                 subject: `New Candy Cruffs Order from ${customer.name}`,
                 text: emailContent
             }).then(() => {
@@ -135,7 +135,7 @@ ${message}
         if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
             transporter.sendMail({
                 from: process.env.EMAIL_USER,
-                to: 'harismuhammad455@gmail.com',
+                to: 'candycruffs@gmail.com',
                 subject: `New Contact Message from ${name}`,
                 text: emailContent
             }).then(() => {
