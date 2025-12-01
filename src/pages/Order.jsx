@@ -357,6 +357,17 @@ const Order = () => {
                                     {status === 'submitting' ? 'Submitting...' : 'Submit Order Request'}
                                 </Button>
 
+                                {status === 'error' && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="mt-4 p-4 bg-red-50 text-red-600 rounded-xl flex items-center gap-3 text-sm"
+                                    >
+                                        <AlertCircle size={20} />
+                                        <p>Something went wrong. Please try again or contact us directly.</p>
+                                    </motion.div>
+                                )}
+
                                 <p className="text-xs text-center text-gray-500 mt-4">
                                     Payment & {isPickup ? 'pickup' : 'delivery'} will be confirmed via email/text after submission.
                                 </p>
