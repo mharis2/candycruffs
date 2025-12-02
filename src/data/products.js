@@ -9,12 +9,12 @@ export const products = [
         badges: ['HALAL', 'SOUR', 'CRUNCHY']
     },
     {
-        id: 'skittles-gummies',
-        name: 'Skittles Freeze Dried Gummies',
+        id: 'prism-pops',
+        name: 'Prism Pops',
         price: 8,
         tagline: 'Classic rainbow, remade in crunch.',
         description: 'Your favorite rainbow candies, puffed up and freeze dried for an intense, crunchy bite.',
-        image: '/assets/logo.png', // Placeholder
+        image: '/assets/prism-pops.png',
         badges: ['HALAL', 'SWEET', 'POPULAR']
     }
 ];

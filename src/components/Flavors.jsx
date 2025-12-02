@@ -46,19 +46,27 @@ const FlavorCard = ({ product, index }) => {
         >
             <div className="flex flex-col h-full">
                 {/* Image Area */}
-                <div className="relative h-64 bg-gray-50 flex items-center justify-center overflow-hidden">
+                <div className="relative h-64 bg-gray-50 flex items-center justify-center">
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 opacity-50" />
                     <motion.div
-                        whileHover={{ scale: 1.05, rotate: 2 }}
-                        transition={{ duration: 0.4 }}
-                        className="relative z-10 w-48 h-48 flex items-center justify-center"
+                        whileHover={{ scale: 1.15, rotate: 8, y: -15 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                        className="relative z-30 w-80 h-80 flex items-center justify-center -mb-24"
                     >
-                        {/* Placeholder for product image if not found */}
-                        <div className="w-40 h-40 bg-white rounded-full shadow-inner flex items-center justify-center text-gray-300 font-bold text-lg border-4 border-white">
+                        {/* Product Image - Large & Free Floating */}
+                        <div className="w-full h-full flex items-center justify-center filter drop-shadow-2xl">
                             {product.image ? (
-                                <img src={product.image} alt={product.name} className="w-full h-full object-contain rounded-full" onError={(e) => e.target.style.display = 'none'} />
-                            ) : 'No Image'}
-                            {!product.image && <span>Img</span>}
+                                <img
+                                    src={product.image}
+                                    alt={product.name}
+                                    className="w-full h-full object-contain transform transition-transform duration-500"
+                                    onError={(e) => e.target.style.display = 'none'}
+                                />
+                            ) : (
+                                <div className="w-40 h-40 bg-white rounded-full shadow-inner flex items-center justify-center text-gray-300 font-bold text-lg border-4 border-white">
+                                    <span>Img</span>
+                                </div>
+                            )}
                         </div>
                     </motion.div>
 
@@ -73,7 +81,7 @@ const FlavorCard = ({ product, index }) => {
                 </div>
 
                 {/* Content Area */}
-                <div className="p-8 flex flex-col flex-grow bg-white relative z-20">
+                <div className="p-8 pt-24 flex flex-col flex-grow bg-white relative z-20">
                     <div className="mb-4">
                         <div className="flex justify-between items-start mb-2">
                             <h3 className="text-2xl font-display font-bold text-gray-900 leading-tight">{product.name}</h3>

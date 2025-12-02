@@ -228,21 +228,7 @@ const Order = () => {
                             </motion.div>
                         ))}
 
-                        {/* Parties & Weddings Section */}
-                        <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-8 rounded-[2rem] border border-purple-100 mt-12 text-center relative overflow-hidden">
-                            <div className="relative z-10">
-                                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm text-purple-500">
-                                    <PartyPopper size={24} />
-                                </div>
-                                <h3 className="text-xl font-display font-bold text-gray-900 mb-2">Parties & Weddings</h3>
-                                <p className="text-gray-600 mb-4 max-w-md mx-auto">
-                                    Planning a special event? We offer custom bulk orders and party favors to make your celebration extra sweet.
-                                </p>
-                                <span className="inline-block bg-white px-4 py-2 rounded-full text-xs font-bold tracking-wider text-purple-600 shadow-sm border border-purple-100">
-                                    COMING SOON
-                                </span>
-                            </div>
-                        </div>
+
                     </div>
 
                     {/* Right Column: Order Summary & Form */}
@@ -372,6 +358,22 @@ const Order = () => {
                                 </p>
                             </form>
                         </div>
+                    </div>
+                </div>
+
+                {/* Parties & Weddings Section */}
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-8 rounded-[2rem] border border-purple-100 mt-12 text-center relative overflow-hidden">
+                    <div className="relative z-10">
+                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm text-purple-500">
+                            <PartyPopper size={24} />
+                        </div>
+                        <h3 className="text-xl font-display font-bold text-gray-900 mb-2">Parties & Weddings</h3>
+                        <p className="text-gray-600 mb-4 max-w-md mx-auto">
+                            Planning a special event? We offer custom bulk orders and party favors to make your celebration extra sweet.
+                        </p>
+                        <span className="inline-block bg-white px-4 py-2 rounded-full text-xs font-bold tracking-wider text-purple-600 shadow-sm border border-purple-100">
+                            COMING SOON
+                        </span>
                     </div>
                 </div>
             </div>
