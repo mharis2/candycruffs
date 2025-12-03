@@ -1,11 +1,11 @@
 export const products = [
     {
-        id: 'sour-gummies',
-        name: 'Sour Freeze Dried Gummies',
+        id: 'neon-sour-crunches',
+        name: 'Neon Sour Crunches',
         price: 10,
         tagline: 'Tart, airy, ultra-crunchy bites.',
         description: 'Bright sour gummies transformed into light, crispy candy clouds with a satisfying crunch.',
-        image: '/assets/logo.png', // Placeholder
+        image: '/assets/neon-sour-crunches.png', // Placeholder
         badges: ['HALAL', 'SOUR', 'CRUNCHY']
     },
     {
