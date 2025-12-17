@@ -72,11 +72,31 @@ const FlavorCard = ({ product, index }) => {
 
                     {/* Badges */}
                     <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
-                        {product.badges?.map(badge => (
-                            <span key={badge} className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold tracking-wider text-gray-800 shadow-sm border border-gray-100 uppercase">
-                                {badge}
-                            </span>
-                        ))}
+                        {product.badges?.map((badge) => {
+                            const badgeColors = {
+                                'HALAL': 'bg-emerald-50 text-emerald-700 border-emerald-100',
+                                'GELATIN-FREE': 'bg-teal-50 text-teal-700 border-teal-100',
+                                'SWEET': 'bg-pink-50 text-pink-700 border-pink-100',
+                                'SOUR': 'bg-lime-50 text-lime-700 border-lime-100',
+                                'SPICY': 'bg-red-50 text-red-700 border-red-100',
+                                'FRUITY': 'bg-orange-50 text-orange-700 border-orange-100',
+                                'CRUNCHY': 'bg-amber-50 text-amber-700 border-amber-100',
+                                'BEST SELLER': 'bg-yellow-50 text-yellow-700 border-yellow-100',
+                                'NEW': 'bg-blue-50 text-blue-700 border-blue-100',
+                                'NEON': 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100',
+                                'COLA': 'bg-stone-50 text-stone-700 border-stone-100',
+                                'FIZZY': 'bg-violet-50 text-violet-700 border-violet-100',
+                                'RAINBOW': 'bg-indigo-50 text-indigo-700 border-indigo-100',
+                            };
+
+                            const colorClass = badgeColors[badge] || 'bg-gray-50 text-gray-700 border-gray-100';
+
+                            return (
+                                <span key={badge} className={`${colorClass} backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold tracking-wider shadow-sm border uppercase`}>
+                                    {badge}
+                                </span>
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -123,13 +143,13 @@ const Flavors = () => {
                     </Reveal>
                     <Reveal delay={0.2}>
                         <h2 className="text-4xl lg:text-5xl font-display font-bold text-gray-900 mb-6">
-                            Weekly Rotations & <br />
-                            <span className="text-primary">Fan Favorites.</span>
+                            The Signature <br />
+                            <span className="text-primary">Collection.</span>
                         </h2>
                     </Reveal>
                     <Reveal delay={0.4}>
                         <p className="text-lg text-gray-600">
-                            Freshly freeze-dried in small batches. Get them while they're crunchy!
+                            Our premium freeze-dried selection. Always fresh, always crunchy.
                         </p>
                     </Reveal>
                 </div>
@@ -140,13 +160,7 @@ const Flavors = () => {
                     ))}
                 </div>
 
-                <div className="mt-16 text-center">
-                    <Link to="/order">
-                        <Button variant="outline" size="lg" className="px-12">
-                            View Full Menu
-                        </Button>
-                    </Link>
-                </div>
+
             </div>
         </section>
     );

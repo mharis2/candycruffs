@@ -44,8 +44,8 @@ const Order = () => {
             return sum + (product.price * (quantities[product.id] || 0));
         }, 0);
 
-        let deliveryFee = 10;
-        if (isPickup || subtotal >= 50) {
+        let deliveryFee = 15;
+        if (isPickup || subtotal >= 70) {
             deliveryFee = 0;
         }
 
@@ -172,8 +172,8 @@ const Order = () => {
                     {!isPickup && (
                         <div className="mt-4 pt-4 border-t border-gray-100">
                             <ul className="text-blue-600 text-sm space-y-1 list-disc list-inside">
-                                <li>Free delivery on orders over $50</li>
-                                <li>$10 delivery fee for orders under $50</li>
+                                <li>Free delivery on orders over $70</li>
+                                <li>$15 delivery fee for orders under $70</li>
                             </ul>
                         </div>
                     )}
@@ -260,13 +260,13 @@ const Order = () => {
                                     <div className="text-right">
                                         {isPickup ? (
                                             <span className="font-bold text-green-500">FREE</span>
-                                        ) : subtotal >= 50 ? (
+                                        ) : subtotal >= 70 ? (
                                             <>
-                                                <span className="text-gray-400 line-through mr-2 text-xs">$10</span>
+                                                <span className="text-gray-400 line-through mr-2 text-xs">$15</span>
                                                 <span className="font-bold text-green-500">FREE</span>
                                             </>
                                         ) : (
-                                            <span className="font-medium text-gray-900">$10</span>
+                                            <span className="font-medium text-gray-900">$15</span>
                                         )}
                                     </div>
                                 </div>
