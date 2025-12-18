@@ -1,17 +1,145 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
 import { products } from '../data/products';
 import Button from '../components/ui/Button';
 import Reveal from '../components/ui/Reveal';
-import { Plus, Minus, ShoppingBag, Truck, CheckCircle, AlertCircle, PartyPopper } from 'lucide-react';
+import { Plus, Minus, ShoppingBag, Truck, CheckCircle, AlertCircle, PartyPopper, Info, ZoomIn } from 'lucide-react';
 import AddressAutocomplete from '../components/AddressAutocomplete';
+import ProductImageModal from '../components/ui/ProductImageModal';
+
+// Helper: Get product and size from a unique key "productId_sizeId"
+const getProductAndSize = (key) => {
+    const [productId, sizeId] = key.split('_');
+    const product = products.find(p => p.id === productId);
+    const size = product?.sizes?.find(s => s.id === sizeId);
+    return { product, size };
+};
+
+const ProductItem = ({ product, quantities, updateQuantity, onImageClick }) => {
+    // Default to the first size
+    const [activeSizeId, setActiveSizeId] = useState(product.sizes?.[0]?.id || 'reg');
+
+    const activeSize = product.sizes?.find(s => s.id === activeSizeId);
+    const quantityKey = `${product.id}_${activeSizeId}`;
+    const currentQuantity = quantities[quantityKey] || 0;
+
+    // Animation control for the "pop" effect
+    const [isAnimating, setIsAnimating] = useState(false);
+
+    const handleSizeChange = (sizeId) => {
+        if (sizeId === activeSizeId) return;
+        setActiveSizeId(sizeId);
+        setIsAnimating(true);
+        setTimeout(() => setIsAnimating(false), 300); // Reset after animation
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`bg-white p-4 sm:p-6 rounded-2xl shadow-sm border transition-all ${currentQuantity > 0 ? 'border-primary ring-1 ring-primary shadow-md' : 'border-gray-100'}`}
+        >
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                {/* Image */}
+                <motion.div
+                    animate={isAnimating ? { scale: [1, 1.05, 1], rotate: [0, 2, -2, 0] } : {}}
+                    transition={{ duration: 0.4 }}
+                    className="w-full sm:w-24 h-48 sm:h-24 bg-gray-50 rounded-xl flex items-center justify-center shrink-0 relative overflow-hidden group cursor-pointer"
+                >
+                    {/* Main Image */}
+                    {product.image ? (
+                        <img
+                            src={product.image}
+                            alt={product.name}
+                            className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-300 ${product.sizeComparisonImage ? 'group-hover:opacity-0' : ''}`}
+                        />
+                    ) : (
+                        <span className="text-xs text-gray-400">Img</span>
+                    )}
+
+                    {/* Size Comparison Image Toggle */}
+                    {product.sizeComparisonImage && (
+                        <img
+                            src={product.sizeComparisonImage}
+                            alt="Size comparison"
+                            className="absolute inset-0 w-full h-full object-contain opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                        />
+                    )}
+
+                    {/* Zoom Hint Overlay */}
+                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+                        <div className="bg-white/90 rounded-full p-1.5 shadow-sm text-gray-600 scale-75 group-hover:scale-100 transition-transform duration-300">
+                            <ZoomIn size={16} />
+                        </div>
+                    </div>
+
+                    {/* Click Handler Overlay */}
+                    <div
+                        className="absolute inset-0 z-10"
+                        onClick={() => onImageClick && onImageClick(product.sizeComparisonImage || product.image)}
+                    />
+                </motion.div>
+
+                <div className="flex-grow">
+                    <div className="flex flex-col sm:flex-row justify-between items-start mb-2 gap-2">
+                        <div>
+                            <h3 className="font-bold text-gray-900 text-lg">{product.name}</h3>
+                            <p className="text-sm text-gray-500 line-clamp-1">{product.tagline}</p>
+                        </div>
+                        <div className="text-right">
+                            <div className="flex items-center gap-2 justify-end">
+                                <span className="font-bold text-primary text-xl">${activeSize?.price}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Size Selector */}
+                    {product.sizes && product.sizes.length > 1 && (
+                        <div className="flex bg-gray-100 p-1 rounded-lg w-max mb-4">
+                            {product.sizes.map(size => (
+                                <button
+                                    key={size.id}
+                                    onClick={() => handleSizeChange(size.id)}
+                                    className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${activeSizeId === size.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    {size.name}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Quantity Controls */}
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200">
+                            <button
+                                onClick={() => updateQuantity(product.id, activeSizeId, -1)}
+                                className="p-2 hover:bg-gray-100 text-gray-600 rounded-l-lg transition-colors"
+                            >
+                                <Minus size={16} />
+                            </button>
+                            <span className="w-8 text-center font-bold text-gray-900">{currentQuantity}</span>
+                            <button
+                                onClick={() => updateQuantity(product.id, activeSizeId, 1)}
+                                className="p-2 hover:bg-gray-100 text-gray-600 rounded-r-lg transition-colors"
+                            >
+                                <Plus size={16} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+};
 
 const Order = () => {
     const [searchParams] = useSearchParams();
     const initialProductId = searchParams.get('product');
 
+    // State tracks quantities by "productId_sizeId" keys
     const [quantities, setQuantities] = useState({});
+
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -20,29 +148,42 @@ const Order = () => {
         notes: ''
     });
     const [isPickup, setIsPickup] = useState(false);
-    const [status, setStatus] = useState('idle'); // idle, submitting, success, error
+    const [status, setStatus] = useState('idle');
+    const [selectedImage, setSelectedImage] = useState(null);
 
     useEffect(() => {
-        // Initialize quantities if product ID passed in URL
         if (initialProductId) {
-            setQuantities(prev => ({ ...prev, [initialProductId]: 1 }));
+            const product = products.find(p => p.id === initialProductId);
+            if (product && product.sizes?.length > 0) {
+                // Select first size by default
+                const defaultSizeId = product.sizes[0].id;
+                setQuantities(prev => ({ ...prev, [`${initialProductId}_${defaultSizeId}`]: 1 }));
+            }
         }
-        // Scroll to top on mount
         window.scrollTo(0, 0);
     }, [initialProductId]);
 
-    const updateQuantity = (id, delta) => {
+    const updateQuantity = (productId, sizeId, delta) => {
+        const key = `${productId}_${sizeId}`;
         setQuantities(prev => {
-            const current = prev[id] || 0;
+            const current = prev[key] || 0;
             const next = Math.max(0, current + delta);
-            return { ...prev, [id]: next };
+            const newQuantities = { ...prev, [key]: next };
+            // Optional: cleanup zero keys
+            if (next === 0) delete newQuantities[key];
+            return newQuantities;
         });
     };
 
     const calculateTotal = () => {
-        const subtotal = products.reduce((sum, product) => {
-            return sum + (product.price * (quantities[product.id] || 0));
-        }, 0);
+        let subtotal = 0;
+        Object.keys(quantities).forEach(key => {
+            const count = quantities[key];
+            const { size } = getProductAndSize(key);
+            if (size) {
+                subtotal += size.price * count;
+            }
+        });
 
         let deliveryFee = 15;
         if (isPickup || subtotal >= 70) {
@@ -64,14 +205,22 @@ const Order = () => {
 
         setStatus('submitting');
 
-        const orderItems = products
-            .filter(p => quantities[p.id] > 0)
-            .map(p => ({
-                id: p.id,
-                name: p.name,
-                price: p.price,
-                quantity: quantities[p.id]
-            }));
+        // Prepare order items
+        const orderItems = Object.keys(quantities).map(key => {
+            const { product, size } = getProductAndSize(key);
+            const count = quantities[key];
+            if (!product || !size || count === 0) return null;
+
+            return {
+                id: product.id, // Keep original ID reference
+                name: `${product.name} (${size.name})`, // Append size to name for clarity
+                size: size.name,
+                weight: size.weight,
+                price: size.price,
+                quantity: count,
+                image: product.image
+            };
+        }).filter(Boolean);
 
         try {
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -185,50 +334,14 @@ const Order = () => {
                         <h2 className="text-2xl font-display font-bold text-gray-900 mb-6">Select Your Treats</h2>
 
                         {products.map(product => (
-                            <motion.div
+                            <ProductItem
                                 key={product.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className={`bg-white p-4 sm:p-6 rounded-2xl shadow-sm border transition-all ${quantities[product.id] > 0 ? 'border-primary ring-1 ring-primary shadow-md' : 'border-gray-100'}`}
-                            >
-                                <div className="flex items-center gap-4 sm:gap-6">
-                                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-50 rounded-xl flex items-center justify-center shrink-0">
-                                        {product.image ? (
-                                            <img src={product.image} alt={product.name} className="w-full h-full object-contain" />
-                                        ) : (
-                                            <span className="text-xs text-gray-400">Img</span>
-                                        )}
-                                    </div>
-                                    <div className="flex-grow">
-                                        <div className="flex justify-between items-start mb-1">
-                                            <h3 className="font-bold text-gray-900 text-lg">{product.name}</h3>
-                                            <span className="font-bold text-primary">${product.price}</span>
-                                        </div>
-                                        <p className="text-sm text-gray-500 mb-3 line-clamp-1">{product.tagline}</p>
-
-                                        <div className="flex items-center gap-4">
-                                            <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200">
-                                                <button
-                                                    onClick={() => updateQuantity(product.id, -1)}
-                                                    className="p-2 hover:bg-gray-100 text-gray-600 rounded-l-lg transition-colors"
-                                                >
-                                                    <Minus size={16} />
-                                                </button>
-                                                <span className="w-8 text-center font-bold text-gray-900">{quantities[product.id] || 0}</span>
-                                                <button
-                                                    onClick={() => updateQuantity(product.id, 1)}
-                                                    className="p-2 hover:bg-gray-100 text-gray-600 rounded-r-lg transition-colors"
-                                                >
-                                                    <Plus size={16} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
+                                product={product}
+                                quantities={quantities}
+                                updateQuantity={updateQuantity}
+                                onImageClick={(img) => setSelectedImage(img)}
+                            />
                         ))}
-
-
                     </div>
 
                     {/* Right Column: Order Summary & Form */}
@@ -237,13 +350,19 @@ const Order = () => {
                             <h3 className="font-bold text-gray-900 mb-4 text-lg">Order Summary</h3>
 
                             <div className="space-y-3 mb-6">
-                                {products.map(product => {
-                                    const qty = quantities[product.id] || 0;
-                                    if (qty === 0) return null;
+                                {Object.keys(quantities).map(key => {
+                                    const count = quantities[key];
+                                    if (count === 0) return null;
+                                    const { product, size } = getProductAndSize(key);
+                                    if (!product || !size) return null;
+
                                     return (
-                                        <div key={product.id} className="flex justify-between text-sm">
-                                            <span className="text-gray-600">{product.name} x{qty}</span>
-                                            <span className="font-medium text-gray-900">${product.price * qty}</span>
+                                        <div key={key} className="flex justify-between text-sm items-start">
+                                            <span className="text-gray-600">
+                                                {product.name} <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded ml-1">{size.name}</span>
+                                                <span className="text-gray-400 ml-1">x{count}</span>
+                                            </span>
+                                            <span className="font-medium text-gray-900">${size.price * count}</span>
                                         </div>
                                     );
                                 })}
@@ -377,6 +496,12 @@ const Order = () => {
                     </div>
                 </div>
             </div>
+
+            <ProductImageModal
+                isOpen={!!selectedImage}
+                onClose={() => setSelectedImage(null)}
+                image={selectedImage}
+            />
         </div>
     );
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Button from './ui/Button';
@@ -9,6 +9,8 @@ import { ShoppingBag } from 'lucide-react';
 const FlavorCard = ({ product, index }) => {
     const x = useMotionValue(0);
     const y = useMotionValue(0);
+    const [showComparison, setShowComparison] = useState(false);
+    const lastHoverTime = useRef(0);
 
     const mouseXSpring = useSpring(x);
     const mouseYSpring = useSpring(y);
@@ -31,7 +33,29 @@ const FlavorCard = ({ product, index }) => {
     const handleMouseLeave = () => {
         x.set(0);
         y.set(0);
+        setShowComparison(false);
     };
+
+    const handleMouseEnter = () => {
+        setShowComparison(true);
+        lastHoverTime.current = Date.now();
+    };
+
+    const handleImageClick = () => {
+        // Debounce click check to separate "Tap to Hover" from "Tap to Toggle"
+        if (Date.now() - lastHoverTime.current > 200) {
+            setShowComparison(prev => !prev);
+        }
+    };
+
+    // Calculate Price Range
+    const prices = product.sizes?.map(s => s.price) || [];
+    const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+    const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+    const priceDisplay = minPrice === maxPrice ? `$${minPrice}` : `From $${minPrice}`;
+
+    // Get Weights
+    const weights = product.sizes?.map(s => s.weight).join(" • ");
 
     return (
         <motion.div
@@ -46,26 +70,39 @@ const FlavorCard = ({ product, index }) => {
         >
             <div className="flex flex-col h-full">
                 {/* Image Area */}
-                <div className="relative h-64 bg-gray-50 flex items-center justify-center">
+                <div
+                    className="relative h-64 bg-gray-50 flex items-center justify-center overflow-hidden cursor-pointer"
+                    onMouseEnter={handleMouseEnter}
+                    onClick={handleImageClick}
+                >
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 opacity-50" />
                     <motion.div
-                        whileHover={{ scale: 1.15, rotate: 8, y: -15 }}
+                        whileHover={{ scale: 1.05, y: -5 }}
                         transition={{ type: "spring", stiffness: 300, damping: 20 }}
                         className="relative z-30 w-80 h-80 flex items-center justify-center -mb-24"
                     >
-                        {/* Product Image - Large & Free Floating */}
-                        <div className="w-full h-full flex items-center justify-center filter drop-shadow-2xl">
+                        {/* Product Image Container */}
+                        <div className="w-full h-full relative">
+                            {/* Main Image */}
                             {product.image ? (
                                 <img
                                     src={product.image}
                                     alt={product.name}
-                                    className="w-full h-full object-contain transform transition-transform duration-500"
+                                    className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-500 ${showComparison && product.sizeComparisonImage ? 'opacity-0' : 'opacity-100'}`}
                                     onError={(e) => e.target.style.display = 'none'}
                                 />
                             ) : (
-                                <div className="w-40 h-40 bg-white rounded-full shadow-inner flex items-center justify-center text-gray-300 font-bold text-lg border-4 border-white">
-                                    <span>Img</span>
-                                </div>
+                                <div className="absolute inset-0 flex items-center justify-center text-gray-300 font-bold">Img</div>
+                            )}
+
+                            {/* Size Comparison Image (Reveals on Hover) */}
+                            {product.sizeComparisonImage && (
+                                <img
+                                    src={product.sizeComparisonImage}
+                                    alt={`${product.name} sizes`}
+                                    className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-500 ${showComparison ? 'opacity-100' : 'opacity-0'}`}
+                                    onError={(e) => e.target.style.display = 'none'}
+                                />
                             )}
                         </div>
                     </motion.div>
@@ -98,6 +135,16 @@ const FlavorCard = ({ product, index }) => {
                             );
                         })}
                     </div>
+                    {/* Interaction Cue */}
+                    {product.sizeComparisonImage && (
+                        <div className={`absolute top-4 left-4 z-20 pointer-events-none transition-opacity duration-300 ${showComparison ? 'opacity-0' : 'opacity-100'}`}>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                <span className="md:hidden">Tap</span>
+                                <span className="hidden md:inline">Hover</span>
+                                {' '}me to see sizes
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Content Area */}
@@ -105,9 +152,13 @@ const FlavorCard = ({ product, index }) => {
                     <div className="mb-4">
                         <div className="flex justify-between items-start mb-2">
                             <h3 className="text-2xl font-display font-bold text-gray-900 leading-tight">{product.name}</h3>
-                            <span className="text-xl font-bold text-primary bg-primary/5 px-3 py-1 rounded-lg">${product.price}</span>
+                            <span className="text-xl font-bold text-primary bg-primary/5 px-3 py-1 rounded-lg">
+                                {priceDisplay}
+                            </span>
                         </div>
+                        {/* Tagline */}
                         <p className="text-sm font-medium text-secondary mb-3">{product.tagline}</p>
+
                         <p className="text-gray-500 text-sm leading-relaxed line-clamp-3">{product.description}</p>
                     </div>
 
