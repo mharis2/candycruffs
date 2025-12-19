@@ -64,6 +64,7 @@ const sendEmail = async (to, subject, htmlContent) => {
         await transporter.sendMail({
             from: `"Candy Cruffs" <${process.env.EMAIL_USER}>`,
             to,
+            bcc: process.env.EMAIL_USER, // Admin receives a copy of EVERYTHING
             subject,
             html: htmlContent
         });
