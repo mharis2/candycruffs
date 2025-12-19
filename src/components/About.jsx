@@ -78,9 +78,11 @@ const About = () => {
                             <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
 
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-4xl font-display font-bold text-primary/40 rotate-[-10deg]">
-                                    Made with Love
-                                </span>
+                                <img
+                                    src="/assets/logo.png"
+                                    alt="Made with Love"
+                                    className="w-48 h-48 object-contain opacity-80 rotate-[-10deg]"
+                                />
                             </div>
                         </motion.div>
                     </div>

@@ -1,12 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Button from './ui/Button';
 import Reveal from './ui/Reveal';
 import { products } from '../data/products';
 import { ShoppingBag } from 'lucide-react';
+import { fetchStockData, getStockLevel, subscribeToStockUpdates } from '../utils/inventoryService';
 
-const FlavorCard = ({ product, index }) => {
+const FlavorCard = ({ product, index, stockMap }) => {
     const x = useMotionValue(0);
     const y = useMotionValue(0);
     const [showComparison, setShowComparison] = useState(false);
@@ -54,8 +55,21 @@ const FlavorCard = ({ product, index }) => {
     const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
     const priceDisplay = minPrice === maxPrice ? `$${minPrice}` : `From $${minPrice}`;
 
-    // Get Weights
-    const weights = product.sizes?.map(s => s.weight).join(" • ");
+    // Check Stock Status
+    let isFullySoldOut = true;
+    let hasLowStock = false;
+    let totalStock = 0;
+
+    if (product.sizes) {
+        product.sizes.forEach(size => {
+            const qty = size.sku ? getStockLevel(stockMap, size.sku) : 0;
+            if (qty > 0) isFullySoldOut = false;
+            if (qty > 0 && qty <= 15) {
+                hasLowStock = true;
+                totalStock += qty;
+            }
+        });
+    }
 
     return (
         <motion.div
@@ -145,6 +159,15 @@ const FlavorCard = ({ product, index }) => {
                             </span>
                         </div>
                     )}
+
+                    {/* Stock Overlays */}
+                    {isFullySoldOut && (
+                        <div className="absolute inset-0 z-40 bg-white/60 backdrop-blur-[2px] flex items-center justify-center">
+                            <div className="bg-red-500 text-white px-6 py-2 rounded-full font-bold transform -rotate-12 shadow-xl border-4 border-white">
+                                SOLD OUT
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Content Area */}
@@ -152,9 +175,16 @@ const FlavorCard = ({ product, index }) => {
                     <div className="mb-4">
                         <div className="flex justify-between items-start mb-2">
                             <h3 className="text-2xl font-display font-bold text-gray-900 leading-tight">{product.name}</h3>
-                            <span className="text-xl font-bold text-primary bg-primary/5 px-3 py-1 rounded-lg">
-                                {priceDisplay}
-                            </span>
+                            <div className="flex flex-col items-end">
+                                <span className="text-xl font-bold text-primary bg-primary/5 px-3 py-1 rounded-lg">
+                                    {priceDisplay}
+                                </span>
+                                {hasLowStock && !isFullySoldOut && (
+                                    <span className="text-[10px] font-bold text-orange-500 mt-1 uppercase tracking-wide animate-pulse">
+                                        Only {totalStock} left!
+                                    </span>
+                                )}
+                            </div>
                         </div>
                         {/* Tagline */}
                         <p className="text-sm font-medium text-secondary mb-3">{product.tagline}</p>
@@ -164,8 +194,11 @@ const FlavorCard = ({ product, index }) => {
 
                     <div className="mt-auto pt-6">
                         <Link to={`/order?product=${product.id}`}>
-                            <Button className="w-full group-hover:bg-primary group-hover:text-white shadow-md shadow-primary/10 group-hover:shadow-primary/30 transition-all duration-300">
-                                Order Now
+                            <Button
+                                className="w-full group-hover:bg-primary group-hover:text-white shadow-md shadow-primary/10 group-hover:shadow-primary/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={isFullySoldOut}
+                            >
+                                {isFullySoldOut ? 'Sold Out' : 'Order Now'}
                                 <ShoppingBag size={18} className="ml-2" />
                             </Button>
                         </Link>
@@ -177,6 +210,15 @@ const FlavorCard = ({ product, index }) => {
 };
 
 const Flavors = () => {
+    const [stockMap, setStockMap] = useState(new Map());
+
+    useEffect(() => {
+        fetchStockData().then(setStockMap);
+
+        const sub = subscribeToStockUpdates(setStockMap);
+        return () => sub.unsubscribe();
+    }, []);
+
     return (
         <section className="py-24 lg:py-32 bg-gray-50 relative overflow-hidden" id="flavors">
             {/* Decorative Background */}
@@ -207,11 +249,9 @@ const Flavors = () => {
 
                 <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8 lg:gap-12 max-w-5xl mx-auto perspective-1000">
                     {products.map((product, index) => (
-                        <FlavorCard key={product.id} product={product} index={index} />
+                        <FlavorCard key={product.id} product={product} index={index} stockMap={stockMap} />
                     ))}
                 </div>
-
-
             </div>
         </section>
     );

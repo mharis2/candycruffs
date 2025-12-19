@@ -10,13 +10,14 @@ import HowItWorks from './components/HowItWorks';
 import FAQ from './components/FAQ';
 import Order from './pages/Order';
 import Contact from './pages/Contact';
+import Admin from './pages/Admin';
 
 function Home() {
     return (
         <>
             <Hero />
-            <div id="about"><About /></div>
             <div id="flavors"><Flavors /></div>
+            <div id="about"><About /></div>
             <Testimonials />
             <HowItWorks />
             <FAQ />
@@ -59,6 +60,7 @@ function App() {
                     <Route path="/" element={<Home />} />
                     <Route path="/order" element={<Order />} />
                     <Route path="/contact" element={<Contact />} />
+                    <Route path="/admin" element={<Admin />} />
                 </Routes>
             </Layout>
         </Router>

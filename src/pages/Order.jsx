@@ -7,6 +7,9 @@ import Reveal from '../components/ui/Reveal';
 import { Plus, Minus, ShoppingBag, Truck, CheckCircle, AlertCircle, PartyPopper, Info, ZoomIn } from 'lucide-react';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import ProductImageModal from '../components/ui/ProductImageModal';
+import { fetchStockData, getStockLevel, subscribeToStockUpdates } from '../utils/inventoryService';
+import { supabase } from '../utils/supabaseClient';
+import { generateOrderCode } from '../utils/orderUtils';
 
 // Helper: Get product and size from a unique key "productId_sizeId"
 const getProductAndSize = (key) => {
@@ -16,13 +19,29 @@ const getProductAndSize = (key) => {
     return { product, size };
 };
 
-const ProductItem = ({ product, quantities, updateQuantity, onImageClick }) => {
-    // Default to the first size
-    const [activeSizeId, setActiveSizeId] = useState(product.sizes?.[0]?.id || 'reg');
+const ProductItem = ({ product, quantities, updateQuantity, onImageClick, stockMap }) => {
+    // Determine the first available size, or default to first if all OOS
+    const [activeSizeId, setActiveSizeId] = useState(() => {
+        const availableSize = product.sizes?.find(s => {
+            // If no SKU (e.g. data error), assume in stock? Or if no map loaded yet.
+            // Best logic: if map is loaded and qty <= 0, skip.
+            if (!s.sku) return true;
+            // If stockMap is empty/loading, perhaps assume in stock? 
+            // Let's assume stockMap is passed. If empty, maybe everything is effectively available or unavailable.
+            // Requirement: "default to Out of Stock depending on safety".
+            // Let's check specific SKU.
+            return getStockLevel(stockMap, s.sku) > 0;
+        });
+        return availableSize ? availableSize.id : (product.sizes?.[0]?.id || 'reg');
+    });
 
     const activeSize = product.sizes?.find(s => s.id === activeSizeId);
     const quantityKey = `${product.id}_${activeSizeId}`;
     const currentQuantity = quantities[quantityKey] || 0;
+
+    // Check stock for the CURRENTLY active size
+    const currentStock = activeSize?.sku ? getStockLevel(stockMap, activeSize.sku) : 0;
+    const isOutOfStock = currentStock <= 0;
 
     // Animation control for the "pop" effect
     const [isAnimating, setIsAnimating] = useState(false);
@@ -97,35 +116,60 @@ const ProductItem = ({ product, quantities, updateQuantity, onImageClick }) => {
                     {/* Size Selector */}
                     {product.sizes && product.sizes.length > 1 && (
                         <div className="flex bg-gray-100 p-1 rounded-lg w-max mb-4">
-                            {product.sizes.map(size => (
-                                <button
-                                    key={size.id}
-                                    onClick={() => handleSizeChange(size.id)}
-                                    className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${activeSizeId === size.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                                >
-                                    {size.name}
-                                </button>
-                            ))}
+                            {product.sizes.map(size => {
+                                const stock = size.sku ? getStockLevel(stockMap, size.sku) : 0;
+                                const isOOS = stock <= 0;
+
+                                return (
+                                    <button
+                                        key={size.id}
+                                        onClick={() => !isOOS && handleSizeChange(size.id)}
+                                        disabled={isOOS}
+                                        className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 
+                                        ${activeSizeId === size.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}
+                                        ${isOOS ? 'opacity-50 cursor-not-allowed bg-gray-200/50' : ''}
+                                    `}
+                                    >
+                                        {size.name}
+                                        {isOOS ? (
+                                            <span className="text-[9px] uppercase tracking-wide text-red-500 font-extrabold">(Sold Out)</span>
+                                        ) : (
+                                            stock > 0 && stock <= 15 && (
+                                                <span className="text-[9px] uppercase tracking-wide text-orange-500 font-bold ml-1 animate-pulse">
+                                                    Only {stock} left!
+                                                </span>
+                                            )
+                                        )}
+                                    </button>
+                                )
+                            })}
                         </div>
                     )}
 
                     {/* Quantity Controls */}
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200">
-                            <button
-                                onClick={() => updateQuantity(product.id, activeSizeId, -1)}
-                                className="p-2 hover:bg-gray-100 text-gray-600 rounded-l-lg transition-colors"
-                            >
-                                <Minus size={16} />
-                            </button>
-                            <span className="w-8 text-center font-bold text-gray-900">{currentQuantity}</span>
-                            <button
-                                onClick={() => updateQuantity(product.id, activeSizeId, 1)}
-                                className="p-2 hover:bg-gray-100 text-gray-600 rounded-r-lg transition-colors"
-                            >
-                                <Plus size={16} />
-                            </button>
-                        </div>
+                        {isOutOfStock ? (
+                            <div className="px-4 py-2 bg-gray-100 text-gray-400 text-sm font-bold rounded-lg border border-gray-200">
+                                Temporarily Sold Out
+                            </div>
+                        ) : (
+                            <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200">
+                                <button
+                                    onClick={() => updateQuantity(product.id, activeSizeId, -1)}
+                                    className="p-2 hover:bg-gray-100 text-gray-600 rounded-l-lg transition-colors"
+                                >
+                                    <Minus size={16} />
+                                </button>
+                                <span className="w-8 text-center font-bold text-gray-900">{currentQuantity}</span>
+                                <button
+                                    onClick={() => updateQuantity(product.id, activeSizeId, 1)}
+                                    disabled={currentQuantity >= currentStock}
+                                    className={`p-2 rounded-r-lg transition-colors ${currentQuantity >= currentStock ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-gray-100 text-gray-600'}`}
+                                >
+                                    <Plus size={16} />
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -139,6 +183,21 @@ const Order = () => {
 
     // State tracks quantities by "productId_sizeId" keys
     const [quantities, setQuantities] = useState({});
+    const [stockMap, setStockMap] = useState(new Map());
+
+    useEffect(() => {
+        const loadStock = async () => {
+            const map = await fetchStockData();
+            setStockMap(map);
+        };
+        loadStock();
+
+        const sub = subscribeToStockUpdates((newMap) => {
+            setStockMap(newMap);
+        });
+
+        return () => sub.unsubscribe();
+    }, []);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -150,6 +209,7 @@ const Order = () => {
     const [isPickup, setIsPickup] = useState(false);
     const [status, setStatus] = useState('idle');
     const [selectedImage, setSelectedImage] = useState(null);
+    const [orderCode, setOrderCode] = useState(null);
 
     useEffect(() => {
         if (initialProductId) {
@@ -205,6 +265,10 @@ const Order = () => {
 
         setStatus('submitting');
 
+        // Generate Order Code
+        const code = generateOrderCode(formData.name);
+        setOrderCode(code);
+
         // Prepare order items
         const orderItems = Object.keys(quantities).map(key => {
             const { product, size } = getProductAndSize(key);
@@ -212,7 +276,8 @@ const Order = () => {
             if (!product || !size || count === 0) return null;
 
             return {
-                id: product.id, // Keep original ID reference
+                id: product.id, // Original ID reference
+                sku: size.sku,
                 name: `${product.name} (${size.name})`, // Append size to name for clarity
                 size: size.name,
                 weight: size.weight,
@@ -223,28 +288,40 @@ const Order = () => {
         }).filter(Boolean);
 
         try {
+            // 1. Place Order in Supabase (Transaction)
+            const { data, error: orderError } = await supabase.rpc('place_order', {
+                order_items: orderItems,
+                customer_email: formData.email,
+                payment_code: code,
+                order_total: total
+            });
+
+            if (orderError) throw orderError;
+
+            // 2. Trigger "Placed" Email (Backend)
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-            const response = await fetch(`${apiUrl}/api/orders`, {
+            fetch(`${apiUrl}/api/emails/placed`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    customer: formData,
-                    items: orderItems,
-                    subtotal,
-                    deliveryFee,
+                    email: formData.email,
+                    name: formData.name,
+                    orderCode: code,
                     total,
-                    isPickup
+                    items: orderItems
                 })
-            });
+            }).catch(err => console.error("Email trigger failed:", err));
 
-            if (response.ok) {
-                setStatus('success');
-                window.scrollTo(0, 0);
-            } else {
-                setStatus('error');
-            }
+            setStatus('success');
+            window.scrollTo(0, 0);
+
         } catch (error) {
             console.error(error);
+            if (error.message && error.message.includes('Insufficient stock')) {
+                alert("Items out of stock! Please refresh.");
+            } else {
+                alert("Order failed: " + error.message);
+            }
             setStatus('error');
         }
     };
@@ -261,9 +338,35 @@ const Order = () => {
                         <CheckCircle size={40} />
                     </div>
                     <h2 className="text-3xl font-display font-bold text-gray-900 mb-4">Order Received!</h2>
-                    <p className="text-gray-600 mb-8">
-                        Thank you, {formData.name}! We've received your order request.
-                        We will contact you shortly via email/text to confirm {isPickup ? 'pickup' : 'delivery'} details and arrange payment.
+
+                    {/* Payment Instructions */}
+                    <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 mb-8 text-left">
+                        <h3 className="font-bold text-gray-900 mb-3 text-lg border-b border-gray-200 pb-2">Payment Instructions</h3>
+                        <div className="space-y-4 text-sm text-gray-700">
+                            <div className="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                                <span className="font-bold text-gray-900">TOTAL DUE:</span>
+                                <span className="font-bold text-xl text-primary">${total}</span>
+                            </div>
+
+                            <p>
+                                Please send an Interac e-Transfer to <span className="font-bold text-gray-900 bg-yellow-100 px-1 rounded">candycruffs@gmail.com</span>
+                            </p>
+
+                            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                                <p className="font-bold text-blue-900 mb-1">IMPORTANT:</p>
+                                <p className="text-blue-800">
+                                    You MUST include your Order Code <span className="font-mono font-bold text-lg bg-white px-2 py-0.5 rounded border border-blue-200 select-all">{orderCode}</span> in the e-Transfer message field.
+                                </p>
+                                <p className="text-xs text-blue-600 mt-2">
+                                    Failure to do so may result in your order not being fulfilled.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p className="text-gray-600 mb-8 text-sm">
+                        Thank you, {formData.name}! We've sent a confirmation email to <b>{formData.email}</b>.
+                        We will process your order once payment is received.
                     </p>
                     <Button onClick={() => window.location.href = '/'}>Return Home</Button>
                 </motion.div>
@@ -340,6 +443,7 @@ const Order = () => {
                                 quantities={quantities}
                                 updateQuantity={updateQuantity}
                                 onImageClick={(img) => setSelectedImage(img)}
+                                stockMap={stockMap}
                             />
                         ))}
                     </div>
