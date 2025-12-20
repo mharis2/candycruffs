@@ -4,9 +4,10 @@ import Button from '../components/ui/Button';
 import { Package, ShoppingBag, Plus, Minus, RefreshCw, Archive, CheckCircle, AlertTriangle } from 'lucide-react';
 
 const Admin = () => {
-    const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'inventory'
+    const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'inventory' | 'fulfillment'
     const [orders, setOrders] = useState([]);
     const [products, setProducts] = useState([]);
+    const [fulfillmentOrders, setFulfillmentOrders] = useState([]);
     const [loading, setLoading] = useState(false);
     const [authorized, setAuthorized] = useState(false);
     const [password, setPassword] = useState('');
@@ -20,6 +21,7 @@ const Admin = () => {
 
     const refreshData = () => {
         if (activeTab === 'orders') fetchOrders();
+        else if (activeTab === 'fulfillment') fetchFulfillment();
         else fetchInventory();
     };
 
@@ -33,6 +35,19 @@ const Admin = () => {
 
         if (error) console.error('Error fetching orders:', error);
         else setOrders(data || []);
+        setLoading(false);
+    };
+
+    const fetchFulfillment = async () => {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('orders')
+            .select('*')
+            .in('status', ['paid', 'fulfilled'])
+            .order('created_at', { ascending: false });
+
+        if (error) console.error('Error fetching fulfillment:', error);
+        else setFulfillmentOrders(data || []);
         setLoading(false);
     };
 
@@ -80,10 +95,22 @@ const Admin = () => {
             // 2. Send Email
             await sendEmailTrigger('paid', {
                 email: order.customer_email,
-                name: order.customer_name || 'Customer', // Fallback if name not saved in future
-                orderCode: order.order_code
+                name: order.customer_name || 'Customer',
+                orderCode: order.order_code,
+                deliveryType: order.delivery_type // Pass delivery type to email
             });
             fetchOrders();
+        }
+    };
+
+    const markFulfilled = async (order) => {
+        if (!window.confirm(`Mark order ${order.order_code} as FULFILLED (picked up/shipped)?`)) return;
+
+        const { error } = await supabase.from('orders').update({ status: 'fulfilled' }).eq('id', order.id);
+        if (error) {
+            alert('Error updating: ' + error.message);
+        } else {
+            fetchFulfillment();
         }
     };
 
@@ -168,7 +195,14 @@ const Admin = () => {
                             className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'orders' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
                         >
                             <ShoppingBag size={18} />
-                            Pending Orders
+                            Pending
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('fulfillment')}
+                            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'fulfillment' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            <CheckCircle size={18} />
+                            Fulfillment
                         </button>
                         <button
                             onClick={() => setActiveTab('inventory')}
@@ -247,6 +281,96 @@ const Admin = () => {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                )}
+
+                {activeTab === 'fulfillment' && (
+                    <div className="space-y-8">
+                        {loading && <div className="text-center py-12 text-gray-400">Loading fulfillment data...</div>}
+
+                        {/* Active Paid Orders - Top Section */}
+                        {!loading && (
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-green-500 block"></span>
+                                    Ready to Fulfill (Paid)
+                                </h2>
+
+                                {fulfillmentOrders.filter(o => o.status === 'paid').length === 0 && (
+                                    <p className="text-gray-400 text-sm italic ml-4">No active paid orders waiting.</p>
+                                )}
+
+                                {fulfillmentOrders.filter(o => o.status === 'paid').map(order => (
+                                    <div key={order.id} className="bg-white p-6 rounded-2xl shadow-sm border border-green-100 flex flex-col md:flex-row gap-6 relative overflow-hidden">
+                                        <div className="absolute top-0 left-0 w-1 h-full bg-green-500" />
+
+                                        <div className="flex-grow">
+                                            <div className="flex flex-wrap justify-between items-start mb-2">
+                                                <h3 className="text-lg font-bold text-gray-900">{order.customer_name}</h3>
+                                                <span className="bg-gray-900 text-white px-3 py-1 rounded text-sm font-bold font-mono">
+                                                    {order.order_code}
+                                                </span>
+                                            </div>
+                                            <div className="text-sm text-gray-600 mb-4">{order.customer_email}</div>
+
+                                            <div className="bg-gray-50 rounded-lg p-3 space-y-1 mb-2">
+                                                {order.items && order.items.map((item, idx) => (
+                                                    <div key={idx} className="flex justify-between text-sm">
+                                                        <span><strong>{item.quantity}x</strong> {item.name}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            <div className="flex gap-2 text-xs font-bold uppercase tracking-wider text-gray-400 mt-2">
+                                                <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded">
+                                                    {order.delivery_type === 'pickup' ? '📍 PICKUP' : '🚚 DELIVERY'}
+                                                </span>
+                                                <span className="bg-green-50 text-green-600 px-2 py-1 rounded">PAID</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center">
+                                            <button
+                                                onClick={() => markFulfilled(order)}
+                                                className="bg-gray-900 hover:bg-black text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all transform hover:scale-105 flex items-center gap-2"
+                                            >
+                                                <CheckCircle size={20} />
+                                                Mark Fulfilled
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* History - Bottom Section */}
+                        {!loading && (
+                            <div className="space-y-4 pt-8 border-t border-gray-200">
+                                <h2 className="text-xl font-bold text-gray-400 flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-gray-300 block"></span>
+                                    Completed History
+                                </h2>
+
+                                <div className="opacity-60 hover:opacity-100 transition-opacity">
+                                    {fulfillmentOrders.filter(o => o.status === 'fulfilled').map(order => (
+                                        <div key={order.id} className="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-2 flex justify-between items-center">
+                                            <div>
+                                                <div className="font-bold text-gray-700">
+                                                    {order.order_code} <span className="text-gray-400 font-normal"> - {order.customer_name}</span>
+                                                </div>
+                                                <div className="text-xs text-gray-400">
+                                                    {new Date(order.created_at).toLocaleDateString()}
+                                                </div>
+                                            </div>
+                                            <span className="text-xs font-bold bg-gray-200 text-gray-500 px-2 py-1 rounded">FULFILLED</span>
+                                        </div>
+                                    ))}
+                                    {fulfillmentOrders.filter(o => o.status === 'fulfilled').length === 0 && (
+                                        <p className="text-gray-400 text-sm italic ml-4">No completed orders yet.</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 

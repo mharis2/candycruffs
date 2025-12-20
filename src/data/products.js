@@ -6,7 +6,7 @@ export const products = [
         tagline: 'Classic rainbow, remade in crunch.',
         description: 'Your favorite rainbow candies, puffed up and freeze dried for an intense, crunchy bite.',
         image: '/assets/prism-pops.png',
-        sizeComparisonImage: '/assets/logo.png', // User to provide
+        sizeComparisonImage: '/assets/prism-pop-size.png', // User to provide
         badges: ['GELATIN-FREE', 'SWEET', 'RAINBOW'],
         sizes: [
             { id: 'std', name: 'Bag', price: 8, sku: 'PRISM-POPS' }

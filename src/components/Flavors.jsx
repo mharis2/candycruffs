@@ -80,41 +80,68 @@ const FlavorCard = ({ product, index, stockMap }) => {
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-            className="group relative bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-lg hover:shadow-2xl transition-all duration-500"
+            className="group relative bg-white rounded-[2rem] border border-gray-100 shadow-lg hover:shadow-2xl transition-all duration-500 z-10 hover:z-20"
         >
-            <div className="flex flex-col h-full">
-                {/* Image Area */}
+            <div className="flex flex-col h-full rounded-[2rem] overflow-hidden">
+                {/* Image Area - Updated for Bleed Effect */}
                 <div
-                    className="relative h-64 bg-gray-50 flex items-center justify-center overflow-hidden cursor-pointer"
+                    className="relative h-72 bg-gray-50 flex items-center justify-center cursor-pointer" // Increased height, removed overflow-hidden here initially, but keeping it on parent for rounded corners? 
+                    // Wait, if we want bleed, we can't have overflow-hidden on the parent "rounded-[2rem]" container if the image goes OUTSIDE.
+                    // But if the image is just "floating" inside a larger header area, it's fine.
+                    // The user said "getting cut out from the card as the image is going past the bottom".
+                    // The issue is likely `overflow-hidden` on the card wrapper or the image container.
+                    // Let's TRY to keep overflow-hidden on the card for border-radius, but allow the image to scale nicely WITHIN ample space, OR remove overflow-hidden and handle border-radius on children.
+
+                    // User wants "bleed out". This usually means overlapping sections.
+                    // For a "premium seamless" look where it lands nice:
+                    // 1. Remove overflow-hidden from the main card container? No, that ruins rounded corners.
+                    // 2. UNLESS we simulate rounded corners on the background div, and let the image float above.
+
+                    // Revised Approach: 
+                    // 1. Remove `overflow-hidden` from the Card root.
+                    // 2. Add an "inner" background card that HAS rounded corners and background.
+                    // 3. Position the image absolutely or relatively such that it pops OUT of that background.
+
+                    // Actually, simpler fix for "seamless modern":
+                    // Use a specific margin/negative margin trick or z-index.
+
+                    // Let's try: Remove overflow-hidden from Card.
+                    // Add `rounded-[2rem]` to the content wrapper div (the white bg).
+                    // The top image area needs its own background with top-rounded corners.
+
                     onMouseEnter={handleMouseEnter}
                     onClick={handleImageClick}
                 >
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 opacity-50" />
+                    {/* Background blob/gradient that STAYS inside rounded corners */}
+                    <div className="absolute inset-0 bg-gray-50 rounded-t-[2rem] overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 opacity-50" />
+                    </div>
+
                     <motion.div
-                        whileHover={{ scale: 1.05, y: -5 }}
+                        whileHover={{ scale: 1.1, y: -10 }}
                         transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                        className="relative z-30 w-80 h-80 flex items-center justify-center -mb-24"
+                        className="relative z-30 w-[85%] h-[85%] flex items-center justify-center" // Removed fixed w-80 h-80 to be responsive and contained yet pop
                     >
                         {/* Product Image Container */}
-                        <div className="w-full h-full relative">
+                        <div className="w-full h-full relative drop-shadow-2xl">
                             {/* Main Image */}
                             {product.image ? (
                                 <img
                                     src={product.image}
                                     alt={product.name}
-                                    className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-500 ${showComparison && product.sizeComparisonImage ? 'opacity-0' : 'opacity-100'}`}
+                                    className={`w-full h-full object-contain transition-opacity duration-500 filter drop-shadow-lg ${showComparison && product.sizeComparisonImage ? 'opacity-0' : 'opacity-100'}`}
                                     onError={(e) => e.target.style.display = 'none'}
                                 />
                             ) : (
                                 <div className="absolute inset-0 flex items-center justify-center text-gray-300 font-bold">Img</div>
                             )}
 
-                            {/* Size Comparison Image (Reveals on Hover) */}
+                            {/* Size Comparison Image */}
                             {product.sizeComparisonImage && (
                                 <img
                                     src={product.sizeComparisonImage}
                                     alt={`${product.name} sizes`}
-                                    className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-500 ${showComparison ? 'opacity-100' : 'opacity-0'}`}
+                                    className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-500 filter drop-shadow-lg ${showComparison ? 'opacity-100' : 'opacity-0'}`}
                                     onError={(e) => e.target.style.display = 'none'}
                                 />
                             )}

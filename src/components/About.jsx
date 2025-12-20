@@ -67,22 +67,20 @@ const About = () => {
 
                     <div className="order-1 lg:order-2 relative">
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
+                            initial={{ opacity: 0, scale: 0.95 }}
                             whileInView={{ opacity: 1, scale: 1 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.8 }}
-                            className="aspect-square rounded-[3rem] bg-gradient-to-br from-primary/10 to-secondary/10 overflow-hidden relative"
+                            className="relative"
                         >
-                            {/* Decorative blobs */}
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-                            <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
-
-                            <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl ring-1 ring-black/5">
                                 <img
-                                    src="/assets/logo.png"
-                                    alt="Made with Love"
-                                    className="w-48 h-48 object-contain opacity-80 rotate-[-10deg]"
+                                    src="/assets/about-img.png"
+                                    alt="Our Freeze Drying Process"
+                                    className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700 ease-out"
                                 />
+                                {/* Premium Overlay Gradient for depth */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-500" />
                             </div>
                         </motion.div>
                     </div>

@@ -289,17 +289,22 @@ const Order = () => {
 
         try {
             // 1. Place Order in Supabase (Transaction)
+            const deliveryType = isPickup ? 'pickup' : 'delivery';
+            const shippingAddress = isPickup ? null : formData.address;
+
             const { data, error: orderError } = await supabase.rpc('place_order', {
                 order_items: orderItems,
                 customer_email: formData.email,
                 payment_code: code,
-                order_total: total
+                order_total: total,
+                delivery_type: deliveryType,
+                shipping_address: shippingAddress
             });
 
             if (orderError) throw orderError;
 
             // 2. Trigger "Placed" Email (Backend)
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+            const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
             fetch(`${apiUrl}/api/emails/placed`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -399,8 +404,8 @@ const Order = () => {
                                 </h3>
                                 <p className="text-gray-500 text-sm">
                                     {isPickup
-                                        ? 'Pickup in Millwoods, Edmonton. Exact location sent after order.'
-                                        : 'Currently delivering to Edmonton, AB only.'}
+                                        ? 'Pickup in Millwoods, Edmonton. Exact location sent in confirmation email.'
+                                        : 'Currently delivering to Edmonton, AB within 3-7 business days.'}
                                 </p>
                             </div>
                         </div>
@@ -426,9 +431,16 @@ const Order = () => {
                             <ul className="text-blue-600 text-sm space-y-1 list-disc list-inside">
                                 <li>Free delivery on orders over $70</li>
                                 <li>$15 delivery fee for orders under $70</li>
+                                <li><strong>Estimated delivery:</strong> 3-7 business days</li>
                             </ul>
                         </div>
                     )}
+
+                    {/* General Disclaimer */}
+                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-start gap-2 text-sm text-yellow-700 bg-yellow-50 p-3 rounded-lg">
+                        <Info size={18} className="shrink-0 mt-0.5" />
+                        <p><strong>Note:</strong> Orders are not confirmed until payment is received via e-Transfer.</p>
+                    </div>
                 </div>
 
                 <div className="grid lg:grid-cols-3 gap-8">
@@ -555,6 +567,10 @@ const Order = () => {
                                         value={formData.notes}
                                         onChange={e => setFormData({ ...formData, notes: e.target.value })}
                                     />
+                                </div>
+
+                                <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg mb-2">
+                                    By submitting, you agree to send an <strong>e-Transfer</strong> to complete your order. Unpaid orders are cancelled after 1 hour.
                                 </div>
 
                                 <Button
