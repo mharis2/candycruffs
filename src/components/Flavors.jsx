@@ -142,6 +142,7 @@ const FlavorCard = ({ product, index, stockMap }) => {
                                 <img
                                     src={product.sizeComparisonImage}
                                     alt={`${product.name} sizes`}
+                                    loading="lazy"
                                     className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-500 filter drop-shadow-lg ${showComparison ? 'opacity-100' : 'opacity-0'}`}
                                     onError={(e) => e.target.style.display = 'none'}
                                 />

@@ -13,7 +13,7 @@ const Footer = () => {
                 <div className="grid md:grid-cols-4 gap-12 border-b border-gray-800 pb-12 mb-12">
                     <div className="col-span-1 md:col-span-2">
                         <Link to="/" className="block w-48 mb-6">
-                            <img src="/assets/logo-text.png" alt="Candy Cruffs" className="w-full h-auto brightness-0 invert" />
+                            <img src="/assets/logo-text.webp" alt="Candy Cruffs" loading="lazy" className="w-full h-auto brightness-0 invert" />
                         </Link>
                         <p className="text-gray-400 max-w-sm">
                             Reinventing snacking with freeze-dried wonder.

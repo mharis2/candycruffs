@@ -75,7 +75,7 @@ const About = () => {
                         >
                             <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl ring-1 ring-black/5">
                                 <img
-                                    src="/assets/about-img.png"
+                                    src="/assets/about-img.webp"
                                     alt="Our Freeze Drying Process"
                                     loading="lazy"
                                     className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700 ease-out"

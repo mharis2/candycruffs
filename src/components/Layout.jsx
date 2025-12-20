@@ -32,7 +32,7 @@ const Layout = ({ children }) => {
             <nav className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md shadow-sm py-4' : 'bg-transparent py-6'}`}>
                 <div className="container mx-auto px-6 flex items-center justify-between">
                     <Link to="/" className="flex items-center">
-                        <img src="/assets/logo-text.png" alt="Candy Cruffs" className="h-12 w-auto" />
+                        <img src="/assets/logo-text.webp" alt="Candy Cruffs" className="h-12 w-auto" />
                     </Link>
 
                     <div className="hidden md:flex items-center space-x-8">

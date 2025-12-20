@@ -92,7 +92,7 @@ const Hero = () => {
                                 className="relative z-10"
                             >
                                 <img
-                                    src="/assets/logo.png"
+                                    src="/assets/logo.webp"
                                     alt="Candy Cruffs Premium Freeze Dried Candy"
                                     className="w-full h-full object-contain drop-shadow-2xl"
                                 />
