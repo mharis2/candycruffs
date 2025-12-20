@@ -5,10 +5,7 @@ import Reveal from './ui/Reveal';
 
 const FeatureCard = ({ icon: Icon, title, description, delay }) => (
     <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay }}
+
         whileHover={{ y: -10 }}
         className="bg-white p-8 rounded-[2rem] shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300"
     >
@@ -67,10 +64,6 @@ const About = () => {
 
                     <div className="order-1 lg:order-2 relative">
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.8 }}
                             className="relative"
                         >
                             <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl ring-1 ring-black/5">

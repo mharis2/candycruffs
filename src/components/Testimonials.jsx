@@ -31,11 +31,7 @@ const Testimonials = () => {
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="text-center mb-16">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                    >
+                    <motion.div>
                         <h2 className="text-4xl lg:text-5xl font-display font-bold text-gray-900 mb-4 tracking-tight">
                             Sweet Words
                         </h2>
@@ -47,10 +43,6 @@ const Testimonials = () => {
                     {testimonials.map((t, i) => (
                         <motion.div
                             key={t.id}
-                            initial={{ opacity: 0, y: 40 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: i * 0.1, duration: 0.6 }}
                             className="bg-white p-10 rounded-[2.5rem] shadow-xl shadow-pink-100/50 border border-white relative hover:-translate-y-2 transition-transform duration-300 ring-1 ring-black/5"
                         >
                             <div className="flex gap-1 text-yellow-400 mb-4">

@@ -26,10 +26,10 @@ const Hero = () => {
     return (
         <section ref={ref} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 pb-16 lg:pt-32 lg:pb-24 bg-gradient-to-b from-background to-white">
             {/* Background Elements */}
-            <motion.div style={{ y: yBg }} className="absolute inset-0 z-0 pointer-events-none">
+            <div className="absolute inset-0 z-0 pointer-events-none">
                 <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl opacity-60 animate-pulse" />
                 <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl opacity-60 animate-pulse" style={{ animationDelay: '2s' }} />
-            </motion.div>
+            </div>
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
@@ -78,10 +78,7 @@ const Hero = () => {
                     </motion.div>
 
                     {/* Visual Content */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+                    <div
                         className="relative order-1 lg:order-2"
                     >
                         <div className="relative aspect-square max-w-md mx-auto lg:max-w-full">
@@ -120,7 +117,7 @@ const Hero = () => {
                                 </div>
                             </motion.div>
                         </div>
-                    </motion.div>
+                    </div>
                 </div>
             </div>
         </section>
