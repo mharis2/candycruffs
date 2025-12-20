@@ -71,6 +71,7 @@ const ProductItem = ({ product, quantities, updateQuantity, onImageClick, stockM
                         <img
                             src={product.image}
                             alt={product.name}
+                            loading="lazy"
                             className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-300 ${product.sizeComparisonImage ? 'group-hover:opacity-0' : ''}`}
                         />
                     ) : (
@@ -82,6 +83,7 @@ const ProductItem = ({ product, quantities, updateQuantity, onImageClick, stockM
                         <img
                             src={product.sizeComparisonImage}
                             alt="Size comparison"
+                            loading="lazy"
                             className="absolute inset-0 w-full h-full object-contain opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                         />
                     )}

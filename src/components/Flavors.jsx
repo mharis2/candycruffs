@@ -64,7 +64,7 @@ const FlavorCard = ({ product, index, stockMap }) => {
         product.sizes.forEach(size => {
             const qty = size.sku ? getStockLevel(stockMap, size.sku) : 0;
             if (qty > 0) isFullySoldOut = false;
-            if (qty > 0 && qty <= 15) {
+            if (qty > 0 && qty <= 10) {
                 hasLowStock = true;
                 totalStock += qty;
             }
@@ -129,6 +129,7 @@ const FlavorCard = ({ product, index, stockMap }) => {
                                 <img
                                     src={product.image}
                                     alt={product.name}
+                                    loading="lazy"
                                     className={`w-full h-full object-contain transition-opacity duration-500 filter drop-shadow-lg ${showComparison && product.sizeComparisonImage ? 'opacity-0' : 'opacity-100'}`}
                                     onError={(e) => e.target.style.display = 'none'}
                                 />
@@ -208,7 +209,7 @@ const FlavorCard = ({ product, index, stockMap }) => {
                                 </span>
                                 {hasLowStock && !isFullySoldOut && (
                                     <span className="text-[10px] font-bold text-orange-500 mt-1 uppercase tracking-wide animate-pulse">
-                                        Only {totalStock} left!
+                                        Low in Stock!
                                     </span>
                                 )}
                             </div>

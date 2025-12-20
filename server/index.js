@@ -81,7 +81,7 @@ const sendEmail = async (to, subject, htmlContent) => {
 // 1. Order Placed (Payment Instruction)
 app.post('/api/emails/placed', async (req, res) => {
     const { email, name, orderCode, total, items } = req.body;
-    const firstName = name.split(' ')[0]; // Extract first name
+    const firstName = (name || '').split(' ')[0] || 'Friend';
 
     const html = `
         <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
@@ -110,7 +110,7 @@ app.post('/api/emails/placed', async (req, res) => {
 // 2. Order Paid (Confirmation)
 app.post('/api/emails/paid', async (req, res) => {
     const { email, name, orderCode, deliveryType } = req.body; // Expect deliveryType: 'pickup' or 'delivery'
-    const firstName = name.split(' ')[0];
+    const firstName = (name || '').split(' ')[0] || 'Friend';
 
     const pickupAddress = "5509 35 Ave NW, Edmonton, AB T6L 2C7";
     const googleMapsLink = "https://www.google.com/maps/search/?api=1&query=5509+35+Ave+NW,+Edmonton,+AB+T6L+2C7";

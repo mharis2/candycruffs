@@ -77,6 +77,7 @@ const About = () => {
                                 <img
                                     src="/assets/about-img.png"
                                     alt="Our Freeze Drying Process"
+                                    loading="lazy"
                                     className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700 ease-out"
                                 />
                                 {/* Premium Overlay Gradient for depth */}

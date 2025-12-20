@@ -9,7 +9,7 @@ export const products = [
         sizeComparisonImage: '/assets/prism-pop-size.png', // User to provide
         badges: ['GELATIN-FREE', 'SWEET', 'RAINBOW'],
         sizes: [
-            { id: 'std', name: 'Bag', price: 8, sku: 'PRISM-POPS' }
+            { id: 'std', name: 'Bag', price: 10, sku: 'PRISM-POPS' }
         ]
     },
     {
@@ -22,7 +22,7 @@ export const products = [
         badges: ['HALAL', 'FRUITY', 'CRUNCHY'],
         sizes: [
             { id: 'reg', name: 'Regular', weight: '50g', price: 8, sku: 'CRYSTAL-BEAR-BITES-REG' },
-            { id: 'lrg', name: 'Large', weight: '120g', price: 15, sku: 'CRYSTAL-BEAR-BITES-LRG' }
+            { id: 'lrg', name: 'Large', weight: '120g', price: 10, sku: 'CRYSTAL-BEAR-BITES-LRG' }
         ]
     },
     {
@@ -35,7 +35,7 @@ export const products = [
         badges: ['HALAL', 'SOUR', 'NEON'],
         sizes: [
             { id: 'reg', name: 'Regular', weight: '50g', price: 8, sku: 'NEON-WORM-CRISPS-REG' },
-            { id: 'lrg', name: 'Large', weight: '120g', price: 15, sku: 'NEON-WORM-CRISPS-LRG' }
+            { id: 'lrg', name: 'Large', weight: '120g', price: 10, sku: 'NEON-WORM-CRISPS-LRG' }
         ]
     },
     {
@@ -48,7 +48,7 @@ export const products = [
         badges: ['HALAL', 'FRUITY', 'CRUNCHY'],
         sizes: [
             { id: 'reg', name: 'Regular', weight: '50g', price: 8, sku: 'SHARK-BITE-CRUNCH-REG' },
-            { id: 'lrg', name: 'Large', weight: '120g', price: 15, sku: 'SHARK-BITE-CRUNCH-LRG' }
+            { id: 'lrg', name: 'Large', weight: '120g', price: 10, sku: 'SHARK-BITE-CRUNCH-LRG' }
         ]
     },
     {
@@ -61,7 +61,7 @@ export const products = [
         badges: ['HALAL', 'COLA', 'FIZZY'],
         sizes: [
             { id: 'reg', name: 'Regular', weight: '50g', price: 8, sku: 'COLA-FIZZ-CRUNCH-REG' },
-            { id: 'lrg', name: 'Large', weight: '120g', price: 15, sku: 'COLA-FIZZ-CRUNCH-LRG' }
+            { id: 'lrg', name: 'Large', weight: '120g', price: 10, sku: 'COLA-FIZZ-CRUNCH-LRG' }
         ]
     }
 ];
