@@ -80,8 +80,23 @@ const sendEmail = async (to, subject, htmlContent) => {
 
 // 1. Order Placed (Payment Instruction)
 app.post('/api/emails/placed', async (req, res) => {
-    const { email, name, orderCode, total, items } = req.body;
+    const { email, name, orderCode, total, items, subtotal, deliveryFee, deliveryType } = req.body;
     const firstName = (name || '').split(' ')[0] || 'Friend';
+
+    // Format currency
+    const fmt = (n) => Object.is(n, -0) || n === 0 ? '0' : n.toFixed(2); // check handling 0
+
+    const isFreeDelivery = deliveryType === 'delivery' && deliveryFee === 0;
+
+    // Delivery Fee Display Logic
+    let deliveryDisplay = '';
+    if (deliveryType === 'pickup') {
+        deliveryDisplay = 'Free (Pickup)';
+    } else if (isFreeDelivery) {
+        deliveryDisplay = '<span style="text-decoration: line-through; color: #999;">$15.00</span> <span style="color: #166534; font-weight: bold;">FREE</span>';
+    } else {
+        deliveryDisplay = `$${fmt(deliveryFee)}`;
+    }
 
     const html = `
         <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
@@ -90,16 +105,40 @@ app.post('/api/emails/placed', async (req, res) => {
             <p>Thanks for your order. To complete your purchase, please send an e-Transfer within <strong>1 hour</strong>.</p>
             
             <div style="background: #fdf2f8; padding: 20px; border-radius: 12px; border: 2px solid #fbcfe8; margin: 20px 0;">
-                <p style="margin: 0; font-weight: bold; color: #be185d;">AMOUNT DUE: $${total}</p>
+                <p style="margin: 0; font-weight: bold; color: #be185d; font-size: 18px;">TOTAL DUE: $${total}</p>
                 <p style="margin: 10px 0;">Send to: <strong>candycruffs@gmail.com</strong></p>
                 <p style="margin: 0;">Message/Memo: <strong style="background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #ddd;">${orderCode}</strong></p>
                 <p style="font-size: 12px; margin-top: 10px; color: #be185d;">*IMPORTANT: You MUST include the Code in the message field so we can match your payment.</p>
             </div>
 
             <h3>Order Summary</h3>
-            <ul>
-                ${items.map(i => `<li>${i.quantity}x ${i.name}</li>`).join('')}
-            </ul>
+            <div style="background: #f9fafb; border-radius: 12px; padding: 16px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    ${items.map(i => `
+                        <tr>
+                            <td style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                                <strong>${i.quantity}x</strong> ${i.name}
+                            </td>
+                            <td style="padding: 8px 0; border-bottom: 1px solid #eee; text-align: right;">
+                                $${fmt(i.price * i.quantity)}
+                            </td>
+                        </tr>
+                    `).join('')}
+                    
+                    <tr>
+                        <td style="padding-top: 12px; font-weight: bold; color: #666;">Subtotal</td>
+                        <td style="padding-top: 12px; text-align: right; font-weight: bold; color: #666;">$${subtotal}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 4px 0; font-weight: bold; color: #666;">Delivery</td>
+                        <td style="padding: 4px 0; text-align: right; color: #666;">${deliveryDisplay}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding-top: 12px; font-weight: 800; font-size: 18px;">Total</td>
+                        <td style="padding-top: 12px; text-align: right; font-weight: 800; font-size: 18px; color: #db2777;">$${total}</td>
+                    </tr>
+                </table>
+            </div>
         </div>
     `;
 
@@ -131,7 +170,10 @@ app.post('/api/emails/paid', async (req, res) => {
                 </a>
                 <p style="margin-top: 16px; font-size: 14px; color: #166534;">
                     <strong>Start Heading Over!</strong><br/>
-                    Please text/email us when you are on your way so we can have it ready at the door.
+                    Pickup Hours: <strong>9 AM - 10 PM</strong> daily.<br/>
+                    Please text or email us when you are on your way so we can have it ready at the door.<br/>
+                    <strong>Call/Text:</strong> +1 (780) 782-3795<br/>
+                    <strong>Email:</strong> candycruffs@gmail.com
                 </p>
             </div>
         `;
@@ -196,6 +238,39 @@ app.post('/api/emails/cancelled', async (req, res) => {
     `;
 
     await sendEmail(email, `Order Cancelled #${orderCode}`, html);
+    res.json({ success: true });
+});
+
+// 4. Order Fulfilled (Cute Thank You)
+app.post('/api/emails/fulfilled', async (req, res) => {
+    const { email, name, orderCode } = req.body;
+    const firstName = (name || '').split(' ')[0] || 'Friend';
+
+    const html = `
+        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; text-align: center;">
+            <div style="background-color: #fff1f2; padding: 40px; border-radius: 20px;">
+                <h1 style="color: #db2777; font-size: 32px; margin-bottom: 10px;">Thank You! 💖</h1>
+                <p style="font-size: 18px; color: #9d174d; margin-top: 0;">Order #${orderCode} Complete</p>
+                
+                <p style="font-size: 16px; line-height: 1.6; margin: 30px 0; color: #4b5563;">
+                    Hi ${firstName}, <br/><br/>
+                    We just wanted to send a huge <strong>THANK YOU</strong> for supporting our small business! 
+                    It means the world to us. We hope these treats bring a little extra crunch and joy to your day. ✨
+                </p>
+
+                <div style="background: white; padding: 20px; border-radius: 12px; display: inline-block; margin-top: 20px;">
+                    <p style="margin: 0; font-weight: bold; color: #db2777;">Enjoy the Crunch!</p>
+                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">- The Candy Cruffs Team</p>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; font-size: 12px; color: #9ca3af;">
+                <p>Questions? Text us at <strong>+1 (780) 782-3795</strong></p>
+            </div>
+        </div>
+    `;
+
+    await sendEmail(email, `Thank You for Your Order! 💖 (#${orderCode})`, html);
     res.json({ success: true });
 });
 

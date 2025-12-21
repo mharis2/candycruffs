@@ -1,5 +1,31 @@
 export const products = [
     {
+        id: 'shark-bite-crunch',
+        name: 'Shark Bite Crunch',
+        tagline: 'Shark gummies with a fierce, foamy crunch.',
+        description: 'Ocean-themed shark gummies puffed up and freeze dried into bold, bite-sized chunks with a powerful crunch.',
+        image: '/assets/shark-bite-crunch.webp',
+        sizeComparisonImage: '/assets/shark-bite-crunch-sizes.webp',
+        badges: ['HALAL', 'FRUITY', 'CRUNCHY'],
+        sizes: [
+            { id: 'reg', name: 'Regular', weight: '50g', price: 8, sku: 'SHARK-BITE-CRUNCH-REG' },
+            { id: 'lrg', name: 'Large', weight: '120g', price: 10, sku: 'SHARK-BITE-CRUNCH-LRG' }
+        ]
+    },
+    {
+        id: 'neon-worm-crisps',
+        name: 'Neon Worm Crisps',
+        tagline: 'Twisted neon worms with an electric sour crunch.',
+        description: 'Bright neon sour gummy worms freeze dried into ultra-light, crackly coils that hit with a tangy crunch.',
+        image: '/assets/neon-worm-crunch.webp',
+        sizeComparisonImage: '/assets/neon-worm-crisps-sizes.webp',
+        badges: ['HALAL', 'SOUR', 'NEON'],
+        sizes: [
+            { id: 'reg', name: 'Regular', weight: '50g', price: 8, sku: 'NEON-WORM-CRISPS-REG' },
+            { id: 'lrg', name: 'Large', weight: '120g', price: 10, sku: 'NEON-WORM-CRISPS-LRG' }
+        ]
+    },
+    {
         id: 'prism-pops',
         name: 'Prism Pops',
         // price removed, moved to sizes
@@ -25,32 +51,8 @@ export const products = [
             { id: 'lrg', name: 'Large', weight: '120g', price: 10, sku: 'CRYSTAL-BEAR-BITES-LRG' }
         ]
     },
-    {
-        id: 'neon-worm-crisps',
-        name: 'Neon Worm Crisps',
-        tagline: 'Twisted neon worms with an electric sour crunch.',
-        description: 'Bright neon sour gummy worms freeze dried into ultra-light, crackly coils that hit with a tangy crunch.',
-        image: '/assets/neon-worm-crunch.webp',
-        sizeComparisonImage: '/assets/neon-worm-crisps-sizes.webp',
-        badges: ['HALAL', 'SOUR', 'NEON'],
-        sizes: [
-            { id: 'reg', name: 'Regular', weight: '50g', price: 8, sku: 'NEON-WORM-CRISPS-REG' },
-            { id: 'lrg', name: 'Large', weight: '120g', price: 10, sku: 'NEON-WORM-CRISPS-LRG' }
-        ]
-    },
-    {
-        id: 'shark-bite-crunch',
-        name: 'Shark Bite Crunch',
-        tagline: 'Shark gummies with a fierce, foamy crunch.',
-        description: 'Ocean-themed shark gummies puffed up and freeze dried into bold, bite-sized chunks with a powerful crunch.',
-        image: '/assets/shark-bite-crunch.webp',
-        sizeComparisonImage: '/assets/shark-bite-crunch-sizes.webp',
-        badges: ['HALAL', 'FRUITY', 'CRUNCHY'],
-        sizes: [
-            { id: 'reg', name: 'Regular', weight: '50g', price: 8, sku: 'SHARK-BITE-CRUNCH-REG' },
-            { id: 'lrg', name: 'Large', weight: '120g', price: 10, sku: 'SHARK-BITE-CRUNCH-LRG' }
-        ]
-    },
+
+
     {
         id: 'cola-fizz-crunch',
         name: 'Cola Fizz Crunch',

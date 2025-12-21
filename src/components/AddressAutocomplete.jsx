@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin } from 'lucide-react';
+import { MapPin, AlertTriangle } from 'lucide-react';
 
-const AddressAutocomplete = ({ value, onChange, required = false }) => {
+// Allowed delivery cities (case-insensitive)
+const ALLOWED_CITIES = ['edmonton', 'st. albert', 'st albert', 'sherwood park'];
+
+const AddressAutocomplete = ({ value, onChange, onValidationChange, required = false }) => {
     const [inputValue, setInputValue] = useState(value || '');
+    const [validationError, setValidationError] = useState(null);
     const inputRef = useRef(null);
     const autocompleteRef = useRef(null);
 
@@ -10,6 +14,23 @@ const AddressAutocomplete = ({ value, onChange, required = false }) => {
     useEffect(() => {
         setInputValue(value || '');
     }, [value]);
+
+    // Validate if city is in allowed delivery zone
+    const validateDeliveryZone = (addressComponents) => {
+        if (!addressComponents) return false;
+
+        // Look for locality (city) or sublocality in address components
+        for (const component of addressComponents) {
+            const types = component.types || [];
+            if (types.includes('locality') || types.includes('sublocality') || types.includes('administrative_area_level_3')) {
+                const cityName = component.long_name.toLowerCase();
+                if (ALLOWED_CITIES.some(allowed => cityName.includes(allowed) || allowed.includes(cityName))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
 
     // Initialize Google Places Autocomplete
     useEffect(() => {
@@ -60,6 +81,16 @@ const AddressAutocomplete = ({ value, onChange, required = false }) => {
                 if (place.formatted_address) {
                     setInputValue(place.formatted_address);
                     onChange(place.formatted_address);
+
+                    // Validate delivery zone
+                    const isValid = validateDeliveryZone(place.address_components);
+                    if (!isValid) {
+                        setValidationError('Sorry, this address is outside our delivery area. We currently deliver to Edmonton, St. Albert, and Sherwood Park only.');
+                        onValidationChange && onValidationChange(false);
+                    } else {
+                        setValidationError(null);
+                        onValidationChange && onValidationChange(true);
+                    }
                 }
             });
 
@@ -73,12 +104,17 @@ const AddressAutocomplete = ({ value, onChange, required = false }) => {
                 window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
             }
         };
-    }, [onChange]);
+    }, [onChange, onValidationChange]);
 
     const handleInputChange = (e) => {
         const newValue = e.target.value;
         setInputValue(newValue);
         onChange(newValue);
+        // Clear validation when user types manually
+        if (validationError) {
+            setValidationError(null);
+            onValidationChange && onValidationChange(true);
+        }
     };
 
     return (
@@ -91,15 +127,24 @@ const AddressAutocomplete = ({ value, onChange, required = false }) => {
                     onChange={handleInputChange}
                     placeholder="Start typing your address..."
                     required={required}
-                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    className={`w-full pl-10 pr-4 py-2 rounded-lg border ${validationError ? 'border-red-400 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 focus:border-primary focus:ring-primary/20'} focus:ring-2 outline-none transition-all`}
                 />
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <div className={`absolute left-3 top-1/2 -translate-y-1/2 ${validationError ? 'text-red-400' : 'text-gray-400'}`}>
                     <MapPin size={18} />
                 </div>
             </div>
-            <p className="text-[10px] text-gray-400 mt-1 ml-1">Powered by Google</p>
+
+            {validationError && (
+                <div className="mt-2 p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 text-sm text-red-600">
+                    <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                    <span>{validationError}</span>
+                </div>
+            )}
+
+            <p className="text-[10px] text-gray-400 mt-1 ml-1">Powered by Google • Delivering to Edmonton, St. Albert & Sherwood Park</p>
         </div>
     );
 };
 
 export default AddressAutocomplete;
+

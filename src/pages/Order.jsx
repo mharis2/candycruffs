@@ -212,6 +212,7 @@ const Order = () => {
     const [status, setStatus] = useState('idle');
     const [selectedImage, setSelectedImage] = useState(null);
     const [orderCode, setOrderCode] = useState(null);
+    const [addressValid, setAddressValid] = useState(true);
 
     useEffect(() => {
         if (initialProductId) {
@@ -265,6 +266,12 @@ const Order = () => {
             return;
         }
 
+        // Check address validity for delivery orders
+        if (!isPickup && !addressValid) {
+            alert("Please enter a valid address within our delivery area (Edmonton, St. Albert, or Sherwood Park).");
+            return;
+        }
+
         setStatus('submitting');
 
         // Generate Order Code
@@ -297,6 +304,8 @@ const Order = () => {
             const { data, error: orderError } = await supabase.rpc('place_order', {
                 order_items: orderItems,
                 customer_email: formData.email,
+                customer_name: formData.name,
+                customer_phone: formData.phone,
                 payment_code: code,
                 order_total: total,
                 delivery_type: deliveryType,
@@ -315,6 +324,9 @@ const Order = () => {
                     name: formData.name,
                     orderCode: code,
                     total,
+                    subtotal,
+                    deliveryFee,
+                    deliveryType: isPickup ? 'pickup' : 'delivery',
                     items: orderItems
                 })
             }).catch(err => console.error("Email trigger failed:", err));
@@ -407,7 +419,7 @@ const Order = () => {
                                 <p className="text-gray-500 text-sm">
                                     {isPickup
                                         ? 'Pickup in Millwoods, Edmonton. Exact location sent in confirmation email.'
-                                        : 'Currently delivering to Edmonton, AB within 3-7 business days.'}
+                                        : 'Currently delivering to Edmonton, St. Albert & Sherwood Park within 3-7 business days.'}
                                 </p>
                             </div>
                         </div>
@@ -433,8 +445,15 @@ const Order = () => {
                             <ul className="text-blue-600 text-sm space-y-1 list-disc list-inside">
                                 <li>Free delivery on orders over $70</li>
                                 <li>$15 delivery fee for orders under $70</li>
+                                <li><strong>Delivery Area:</strong> Edmonton, St. Albert & Sherwood Park</li>
                                 <li><strong>Estimated delivery:</strong> 3-7 business days</li>
                             </ul>
+                            <div className="mt-3 flex items-center gap-2 bg-purple-50 border border-purple-100 p-3 rounded-lg">
+                                <span className="text-lg">🌍</span>
+                                <p className="text-sm text-purple-700">
+                                    <strong>International Shipping Coming Soon!</strong> Canada & US nationwide delivery launching shortly.
+                                </p>
+                            </div>
                         </div>
                     )}
 
@@ -478,7 +497,9 @@ const Order = () => {
                                         <div key={key} className="flex justify-between text-sm items-start">
                                             <span className="text-gray-600">
                                                 {product.name} <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded ml-1">{size.name}</span>
-                                                <span className="text-gray-400 ml-1">x{count}</span>
+                                                <span className="text-gray-400 ml-1 block text-xs">
+                                                    ${size.price} x {count}
+                                                </span>
                                             </span>
                                             <span className="font-medium text-gray-900">${size.price * count}</span>
                                         </div>
@@ -522,6 +543,7 @@ const Order = () => {
                                         className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                        placeholder="First & Last Name"
                                     />
                                 </div>
                                 <div>
@@ -540,6 +562,7 @@ const Order = () => {
                                         type="tel"
                                         required
                                         className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                                        placeholder="(555) 555-5555"
                                         value={formData.phone}
                                         onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                     />
@@ -556,6 +579,7 @@ const Order = () => {
                                             required={!isPickup}
                                             value={formData.address}
                                             onChange={(val) => setFormData({ ...formData, address: val })}
+                                            onValidationChange={(isValid) => setAddressValid(isValid)}
                                         />
                                     </motion.div>
                                 )}
@@ -594,9 +618,16 @@ const Order = () => {
                                     </motion.div>
                                 )}
 
-                                <p className="text-xs text-center text-gray-500 mt-4">
-                                    Payment & {isPickup ? 'pickup' : 'delivery'} will be confirmed via email/text after submission.
-                                </p>
+                                {isPickup && (
+                                    <p className="text-xs text-center text-gray-500 mt-4 font-medium">
+                                        Pickup Window: <span className="text-gray-900 font-bold">9 AM - 10 PM</span> daily. Have your Order # ready!
+                                    </p>
+                                )}
+                                {!isPickup && (
+                                    <p className="text-xs text-center text-gray-500 mt-4">
+                                        Delivery will be confirmed via email/text after payment.
+                                    </p>
+                                )}
                             </form>
                         </div>
                     </div>

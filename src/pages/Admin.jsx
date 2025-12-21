@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../utils/supabaseClient';
 import Button from '../components/ui/Button';
-import { Package, ShoppingBag, Plus, Minus, RefreshCw, Archive, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Package, ShoppingBag, Plus, Minus, RefreshCw, Archive, CheckCircle, AlertTriangle, BarChart3, TrendingUp, DollarSign, Users, Truck, MapPin } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 
 const Admin = () => {
-    const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'inventory' | 'fulfillment'
+    const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'inventory' | 'fulfillment' | 'analytics'
+    const [analyticsOrders, setAnalyticsOrders] = useState([]);
     const [orders, setOrders] = useState([]);
     const [products, setProducts] = useState([]);
     const [fulfillmentOrders, setFulfillmentOrders] = useState([]);
@@ -22,8 +24,103 @@ const Admin = () => {
     const refreshData = () => {
         if (activeTab === 'orders') fetchOrders();
         else if (activeTab === 'fulfillment') fetchFulfillment();
+        else if (activeTab === 'analytics') fetchAnalytics();
         else fetchInventory();
     };
+
+    const fetchAnalytics = async () => {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('orders')
+            .select('*')
+            .in('status', ['paid', 'fulfilled'])
+            .order('created_at', { ascending: true });
+
+        if (error) console.error('Error fetching analytics:', error);
+        else setAnalyticsOrders(data || []);
+        setLoading(false);
+    };
+
+    // --- Analytics Computations ---
+    const analytics = useMemo(() => {
+        if (analyticsOrders.length === 0) return null;
+
+        // Total Revenue
+        const totalRevenue = analyticsOrders.reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
+        const totalOrders = analyticsOrders.length;
+        const avgOrderValue = totalRevenue / totalOrders;
+        const totalItems = analyticsOrders.reduce((sum, o) =>
+            sum + (o.items?.reduce((acc, i) => acc + (parseInt(i.quantity) || 0), 0) || 0), 0);
+
+        // Product Popularity
+        const productCounts = {};
+        analyticsOrders.forEach(order => {
+            order.items?.forEach(item => {
+                const name = item.name || item.sku;
+                productCounts[name] = (productCounts[name] || 0) + (parseInt(item.quantity) || 0);
+            });
+        });
+        const productData = Object.entries(productCounts)
+            .map(([name, count]) => ({ name: name.length > 15 ? name.slice(0, 15) + '...' : name, fullName: name, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 8);
+
+        // Delivery vs Pickup
+        const deliveryCount = analyticsOrders.filter(o => o.delivery_type === 'delivery').length;
+        const pickupCount = analyticsOrders.filter(o => o.delivery_type === 'pickup').length;
+        const deliveryData = [
+            { name: 'Delivery', value: deliveryCount, color: '#3b82f6' },
+            { name: 'Pickup', value: pickupCount, color: '#10b981' }
+        ];
+
+        // Orders Over Time (group by date)
+        const ordersByDate = {};
+        analyticsOrders.forEach(order => {
+            const date = new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            ordersByDate[date] = (ordersByDate[date] || 0) + 1;
+        });
+        const timeData = Object.entries(ordersByDate)
+            .map(([date, orders]) => ({ date, orders }))
+            .slice(-14); // Last 14 days
+
+        // Revenue Over Time
+        const revenueByDate = {};
+        analyticsOrders.forEach(order => {
+            const date = new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            revenueByDate[date] = (revenueByDate[date] || 0) + parseFloat(order.total || 0);
+        });
+        const revenueData = Object.entries(revenueByDate)
+            .map(([date, revenue]) => ({ date, revenue: Math.round(revenue) }))
+            .slice(-14);
+
+        // Insights
+        const bestSeller = productData[0]?.fullName || 'N/A';
+        const preferredMethod = deliveryCount > pickupCount ? 'Delivery' : 'Pickup';
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayCounts = [0, 0, 0, 0, 0, 0, 0];
+        analyticsOrders.forEach(order => {
+            const day = new Date(order.created_at).getDay();
+            dayCounts[day]++;
+        });
+        const peakDayIndex = dayCounts.indexOf(Math.max(...dayCounts));
+        const peakDay = dayNames[peakDayIndex];
+
+        return {
+            totalRevenue,
+            totalOrders,
+            avgOrderValue,
+            totalItems,
+            productData,
+            deliveryData,
+            timeData,
+            revenueData,
+            bestSeller,
+            preferredMethod,
+            peakDay,
+            deliveryPercent: Math.round((deliveryCount / totalOrders) * 100),
+            pickupPercent: Math.round((pickupCount / totalOrders) * 100)
+        };
+    }, [analyticsOrders]);
 
     const fetchOrders = async () => {
         setLoading(true);
@@ -110,6 +207,13 @@ const Admin = () => {
         if (error) {
             alert('Error updating: ' + error.message);
         } else {
+            // New: Send Email
+            await sendEmailTrigger('fulfilled', {
+                email: order.customer_email,
+                name: order.customer_name || 'Customer',
+                orderCode: order.order_code,
+                deliveryType: order.delivery_type
+            });
             fetchFulfillment();
         }
     };
@@ -132,6 +236,54 @@ const Admin = () => {
             });
             fetchOrders();
         }
+    };
+
+    const deleteOrder = async (orderId) => {
+        if (!window.confirm("Are you sure you want to PERMANENTLY delete this order? This cannot be undone.")) return;
+
+        const { error } = await supabase.from('orders').delete().eq('id', orderId);
+        if (error) {
+            alert("Error deleting: " + error.message);
+        } else {
+            fetchFulfillment();
+        }
+    };
+
+    // Prepare History Stats/Delete
+    const renderHistory = () => {
+        return fulfillmentOrders.filter(o => o.status === 'fulfilled').map(order => {
+            const itemCount = order.items.reduce((acc, i) => acc + (parseInt(i.quantity) || 0), 0);
+            return (
+                <div key={order.id} className="bg-white border rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-gray-700">{order.order_code}</span>
+                            <span className="text-gray-400 font-normal text-sm">- {order.customer_name || 'No Name'}</span>
+                        </div>
+                        <div className="text-xs text-gray-400 font-mono mb-1">{order.customer_email}</div>
+                        <div className="text-xs text-green-600 font-bold flex items-center gap-1">
+                            <CheckCircle size={12} /> Fulfilled
+                        </div>
+                        {/* Stats Summary */}
+                        <div className="text-xs text-gray-500 mt-2 bg-gray-50 p-2 rounded">
+                            <span className="font-bold">{itemCount} items</span> • Total: <span className="font-bold text-gray-900">${order.total}</span>
+                        </div>
+                        <div className="text-[10px] text-gray-400 mt-1 max-w-xs truncate">
+                            {order.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}
+                        </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                        <Button
+                            className="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1 text-xs h-auto"
+                            onClick={() => deleteOrder(order.id)}
+                        >
+                            Delete
+                        </Button>
+                    </div>
+                </div>
+            )
+        });
     };
 
     // --- Inventory Actions ---
@@ -211,6 +363,13 @@ const Admin = () => {
                             <Package size={18} />
                             Inventory
                         </button>
+                        <button
+                            onClick={() => setActiveTab('analytics')}
+                            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'analytics' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            <BarChart3 size={18} />
+                            Analytics
+                        </button>
                     </div>
                 </div>
 
@@ -235,9 +394,11 @@ const Admin = () => {
                                     <div className="flex flex-wrap justify-between items-start mb-4 gap-2">
                                         <div>
                                             <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                                {order.customer_email}
+                                                {order.customer_name || 'Customer'}
                                             </h3>
-                                            <p className="text-xs text-gray-500 font-mono mt-1">ID: {order.id}</p>
+                                            <p className="text-sm text-gray-600 font-medium">{order.customer_phone}</p>
+                                            <p className="text-xs text-gray-400 font-mono mt-0.5">{order.customer_email}</p>
+                                            <p className="text-xs text-gray-400 font-mono mt-1">ID: {order.id}</p>
                                         </div>
                                         <div className="flex items-center gap-3">
                                             <span className="font-mono bg-gray-100 px-3 py-1 rounded text-sm font-bold text-gray-700">
@@ -311,7 +472,8 @@ const Admin = () => {
                                                     {order.order_code}
                                                 </span>
                                             </div>
-                                            <div className="text-sm text-gray-600 mb-4">{order.customer_email}</div>
+                                            <div className="text-sm text-gray-600 mb-1">{order.customer_email}</div>
+                                            <div className="text-sm text-gray-600 mb-4">{order.customer_phone}</div>
 
                                             <div className="bg-gray-50 rounded-lg p-3 space-y-1 mb-2">
                                                 {order.items && order.items.map((item, idx) => (
@@ -343,34 +505,22 @@ const Admin = () => {
                             </div>
                         )}
 
-                        {/* History - Bottom Section */}
-                        {!loading && (
-                            <div className="space-y-4 pt-8 border-t border-gray-200">
-                                <h2 className="text-xl font-bold text-gray-400 flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-gray-300 block"></span>
-                                    Completed History
-                                </h2>
+                    </div>
+                )}
 
-                                <div className="opacity-60 hover:opacity-100 transition-opacity">
-                                    {fulfillmentOrders.filter(o => o.status === 'fulfilled').map(order => (
-                                        <div key={order.id} className="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-2 flex justify-between items-center">
-                                            <div>
-                                                <div className="font-bold text-gray-700">
-                                                    {order.order_code} <span className="text-gray-400 font-normal"> - {order.customer_name}</span>
-                                                </div>
-                                                <div className="text-xs text-gray-400">
-                                                    {new Date(order.created_at).toLocaleDateString()}
-                                                </div>
-                                            </div>
-                                            <span className="text-xs font-bold bg-gray-200 text-gray-500 px-2 py-1 rounded">FULFILLED</span>
-                                        </div>
-                                    ))}
-                                    {fulfillmentOrders.filter(o => o.status === 'fulfilled').length === 0 && (
-                                        <p className="text-gray-400 text-sm italic ml-4">No completed orders yet.</p>
-                                    )}
-                                </div>
-                            </div>
-                        )}
+                {!loading && (
+                    <div className="space-y-4 pt-8 border-t border-gray-200">
+                        <h2 className="text-xl font-bold text-gray-400 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-gray-300 block"></span>
+                            Completed History
+                        </h2>
+
+                        <div className="opacity-60 hover:opacity-100 transition-opacity space-y-2">
+                            {renderHistory()}
+                            {fulfillmentOrders.filter(o => o.status === 'fulfilled').length === 0 && (
+                                <p className="text-gray-400 text-sm italic ml-4">No completed orders yet.</p>
+                            )}
+                        </div>
                     </div>
                 )}
 
@@ -435,6 +585,177 @@ const Admin = () => {
                                 </div>
                             ))}
                         </div>
+                    </div>
+                )}
+
+                {/* Analytics Tab */}
+                {activeTab === 'analytics' && (
+                    <div className="space-y-6">
+                        {loading && <div className="text-center py-12 text-gray-400">Loading analytics...</div>}
+
+                        {!loading && !analytics && (
+                            <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
+                                <BarChart3 className="mx-auto h-12 w-12 text-gray-200 mb-4" />
+                                <h3 className="text-lg font-bold text-gray-900">No Data Yet</h3>
+                                <p className="text-gray-500">Complete some orders to see analytics.</p>
+                            </div>
+                        )}
+
+                        {!loading && analytics && (
+                            <>
+                                {/* KPI Cards */}
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                                                <DollarSign className="w-5 h-5 text-green-600" />
+                                            </div>
+                                            <span className="text-xs font-bold text-gray-400 uppercase">Total Revenue</span>
+                                        </div>
+                                        <div className="text-2xl font-bold text-gray-900">${analytics.totalRevenue.toFixed(2)}</div>
+                                    </div>
+
+                                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                                                <ShoppingBag className="w-5 h-5 text-blue-600" />
+                                            </div>
+                                            <span className="text-xs font-bold text-gray-400 uppercase">Total Orders</span>
+                                        </div>
+                                        <div className="text-2xl font-bold text-gray-900">{analytics.totalOrders}</div>
+                                    </div>
+
+                                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                                                <TrendingUp className="w-5 h-5 text-purple-600" />
+                                            </div>
+                                            <span className="text-xs font-bold text-gray-400 uppercase">Avg Order</span>
+                                        </div>
+                                        <div className="text-2xl font-bold text-gray-900">${analytics.avgOrderValue.toFixed(2)}</div>
+                                    </div>
+
+                                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                                                <Package className="w-5 h-5 text-orange-600" />
+                                            </div>
+                                            <span className="text-xs font-bold text-gray-400 uppercase">Items Sold</span>
+                                        </div>
+                                        <div className="text-2xl font-bold text-gray-900">{analytics.totalItems}</div>
+                                    </div>
+                                </div>
+
+                                {/* Charts Row */}
+                                <div className="grid lg:grid-cols-2 gap-6">
+                                    {/* Product Popularity */}
+                                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                                            Most Popular Products
+                                        </h3>
+                                        <div className="h-64">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart data={analytics.productData} layout="vertical" margin={{ left: 10, right: 30 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                                    <XAxis type="number" tick={{ fontSize: 12, fill: '#888' }} />
+                                                    <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11, fill: '#555' }} />
+                                                    <Tooltip
+                                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                                        formatter={(value, name, props) => [value, props.payload.fullName]}
+                                                    />
+                                                    <Bar dataKey="count" fill="#3b82f6" radius={[0, 6, 6, 0]} />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+
+                                    {/* Delivery vs Pickup */}
+                                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                            Delivery Method Breakdown
+                                        </h3>
+                                        <div className="h-64 flex items-center justify-center">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart>
+                                                    <Pie
+                                                        data={analytics.deliveryData}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        innerRadius={60}
+                                                        outerRadius={90}
+                                                        paddingAngle={5}
+                                                        dataKey="value"
+                                                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                                        labelLine={false}
+                                                    >
+                                                        {analytics.deliveryData.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                        <div className="flex justify-center gap-6 mt-2">
+                                            <div className="flex items-center gap-2">
+                                                <Truck className="w-4 h-4 text-blue-500" />
+                                                <span className="text-sm text-gray-600">Delivery: <strong>{analytics.deliveryPercent}%</strong></span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <MapPin className="w-4 h-4 text-green-500" />
+                                                <span className="text-sm text-gray-600">Pickup: <strong>{analytics.pickupPercent}%</strong></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Line Chart - Orders Over Time */}
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                                        Order & Revenue Trends
+                                    </h3>
+                                    <div className="h-72">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <LineChart data={analytics.revenueData} margin={{ left: 10, right: 30 }}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#888' }} />
+                                                <YAxis tick={{ fontSize: 12, fill: '#888' }} />
+                                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                                                <Legend />
+                                                <Line type="monotone" dataKey="revenue" stroke="#8b5cf6" strokeWidth={3} dot={{ fill: '#8b5cf6', r: 4 }} name="Revenue ($)" />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+
+                                {/* Actionable Insights */}
+                                <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-2xl shadow-lg text-white">
+                                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                                        💡 Actionable Insights
+                                    </h3>
+                                    <div className="grid md:grid-cols-3 gap-4">
+                                        <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+                                            <div className="text-xs uppercase font-bold text-gray-400 mb-1">🏆 Best Seller</div>
+                                            <div className="text-lg font-bold">{analytics.bestSeller}</div>
+                                            <p className="text-xs text-gray-400 mt-1">Consider stocking more of this flavor</p>
+                                        </div>
+                                        <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+                                            <div className="text-xs uppercase font-bold text-gray-400 mb-1">🚚 Preferred Method</div>
+                                            <div className="text-lg font-bold">{analytics.preferredMethod}</div>
+                                            <p className="text-xs text-gray-400 mt-1">{analytics.deliveryPercent > 60 ? 'Consider delivery promos' : analytics.pickupPercent > 60 ? 'Great for local engagement' : 'Nice balance!'}</p>
+                                        </div>
+                                        <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+                                            <div className="text-xs uppercase font-bold text-gray-400 mb-1">📅 Peak Day</div>
+                                            <div className="text-lg font-bold">{analytics.peakDay}</div>
+                                            <p className="text-xs text-gray-400 mt-1">Plan restocking before this day</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
             </div>
