@@ -359,38 +359,41 @@ const Admin = () => {
             <div className="container mx-auto max-w-5xl">
 
                 {/* Header & Tabs */}
-                <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                    <h1 className="text-3xl font-display font-bold text-gray-900">Dashboard</h1>
+                <div className="flex flex-col gap-4 mb-6">
+                    <h1 className="text-2xl sm:text-3xl font-display font-bold text-gray-900">Dashboard</h1>
 
-                    <div className="flex bg-white p-1 rounded-xl shadow-sm border border-gray-100">
-                        <button
-                            onClick={() => setActiveTab('orders')}
-                            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'orders' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-                        >
-                            <ShoppingBag size={18} />
-                            Pending
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('fulfillment')}
-                            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'fulfillment' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-                        >
-                            <CheckCircle size={18} />
-                            Fulfillment
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('inventory')}
-                            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'inventory' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-                        >
-                            <Package size={18} />
-                            Inventory
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('analytics')}
-                            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'analytics' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-                        >
-                            <BarChart3 size={18} />
-                            Analytics
-                        </button>
+                    {/* Mobile-friendly scrollable tabs */}
+                    <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                        <div className="flex bg-white p-1 rounded-xl shadow-sm border border-gray-100 min-w-max sm:min-w-0">
+                            <button
+                                onClick={() => setActiveTab('orders')}
+                                className={`flex items-center gap-1.5 px-3 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'orders' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                <ShoppingBag size={16} className="hidden sm:block" />
+                                Pending
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('fulfillment')}
+                                className={`flex items-center gap-1.5 px-3 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'fulfillment' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                <CheckCircle size={16} className="hidden sm:block" />
+                                Fulfill
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('inventory')}
+                                className={`flex items-center gap-1.5 px-3 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'inventory' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                <Package size={16} className="hidden sm:block" />
+                                Stock
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('analytics')}
+                                className={`flex items-center gap-1.5 px-3 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'analytics' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                <BarChart3 size={16} className="hidden sm:block" />
+                                Stats
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -546,18 +549,18 @@ const Admin = () => {
                 )}
 
                 {activeTab === 'inventory' && (
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                         {/* Header */}
-                        <div className="flex justify-between items-center">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                             <div>
-                                <h2 className="text-xl font-bold text-gray-900">Stock Management</h2>
-                                <p className="text-sm text-gray-500">Update inventory levels for each product</p>
+                                <h2 className="text-lg sm:text-xl font-bold text-gray-900">Stock Management</h2>
+                                <p className="text-xs sm:text-sm text-gray-500">Update inventory levels</p>
                             </div>
                             <button
                                 onClick={fetchInventory}
-                                className="text-sm font-bold text-primary flex items-center gap-2 hover:bg-blue-50 px-4 py-2 rounded-xl transition-colors border border-blue-100"
+                                className="text-xs sm:text-sm font-bold text-primary flex items-center gap-1.5 hover:bg-blue-50 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl transition-colors border border-blue-100"
                             >
-                                <RefreshCw size={16} /> Refresh
+                                <RefreshCw size={14} /> <span className="hidden sm:inline">Refresh</span>
                             </button>
                         </div>
 
@@ -607,8 +610,8 @@ const Admin = () => {
                                                                 )}
                                                             </div>
                                                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${isSoldOut ? 'bg-red-100 text-red-700' :
-                                                                    isLowStock ? 'bg-orange-100 text-orange-700' :
-                                                                        'bg-green-100 text-green-700'
+                                                                isLowStock ? 'bg-orange-100 text-orange-700' :
+                                                                    'bg-green-100 text-green-700'
                                                                 }`}>
                                                                 {isSoldOut ? 'SOLD OUT' : isLowStock ? 'LOW' : 'IN STOCK'}
                                                             </span>
@@ -631,8 +634,8 @@ const Admin = () => {
                                                             </button>
 
                                                             <div className={`w-14 h-8 flex items-center justify-center rounded-lg font-bold text-lg ${isSoldOut ? 'bg-red-100 text-red-700' :
-                                                                    isLowStock ? 'bg-orange-100 text-orange-700' :
-                                                                        'bg-gray-100 text-gray-900'
+                                                                isLowStock ? 'bg-orange-100 text-orange-700' :
+                                                                    'bg-gray-100 text-gray-900'
                                                                 }`}>
                                                                 {product.stock_qty}
                                                             </div>
@@ -688,57 +691,57 @@ const Admin = () => {
                         {!loading && analytics && (
                             <>
                                 {/* KPI Cards */}
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                                                <DollarSign className="w-5 h-5 text-green-600" />
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                                    <div className="bg-white p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100">
+                                        <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+                                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-green-100 flex items-center justify-center">
+                                                <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                                             </div>
-                                            <span className="text-xs font-bold text-gray-400 uppercase">Total Revenue</span>
+                                            <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase">Revenue</span>
                                         </div>
-                                        <div className="text-2xl font-bold text-gray-900">${analytics.totalRevenue.toFixed(2)}</div>
+                                        <div className="text-lg sm:text-2xl font-bold text-gray-900">${analytics.totalRevenue.toFixed(0)}</div>
                                     </div>
 
-                                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                                                <ShoppingBag className="w-5 h-5 text-blue-600" />
+                                    <div className="bg-white p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100">
+                                        <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+                                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-blue-100 flex items-center justify-center">
+                                                <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                                             </div>
-                                            <span className="text-xs font-bold text-gray-400 uppercase">Total Orders</span>
+                                            <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase">Orders</span>
                                         </div>
-                                        <div className="text-2xl font-bold text-gray-900">{analytics.totalOrders}</div>
+                                        <div className="text-lg sm:text-2xl font-bold text-gray-900">{analytics.totalOrders}</div>
                                     </div>
 
-                                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-                                                <TrendingUp className="w-5 h-5 text-purple-600" />
+                                    <div className="bg-white p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100">
+                                        <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+                                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-purple-100 flex items-center justify-center">
+                                                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
                                             </div>
-                                            <span className="text-xs font-bold text-gray-400 uppercase">Avg Order</span>
+                                            <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase">Avg Order</span>
                                         </div>
-                                        <div className="text-2xl font-bold text-gray-900">${analytics.avgOrderValue.toFixed(2)}</div>
+                                        <div className="text-lg sm:text-2xl font-bold text-gray-900">${analytics.avgOrderValue.toFixed(0)}</div>
                                     </div>
 
-                                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
-                                                <Package className="w-5 h-5 text-orange-600" />
+                                    <div className="bg-white p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100">
+                                        <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+                                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-orange-100 flex items-center justify-center">
+                                                <Package className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
                                             </div>
-                                            <span className="text-xs font-bold text-gray-400 uppercase">Items Sold</span>
+                                            <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase">Items</span>
                                         </div>
-                                        <div className="text-2xl font-bold text-gray-900">{analytics.totalItems}</div>
+                                        <div className="text-lg sm:text-2xl font-bold text-gray-900">{analytics.totalItems}</div>
                                     </div>
                                 </div>
 
                                 {/* Charts Row */}
-                                <div className="grid lg:grid-cols-2 gap-6">
+                                <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
                                     {/* Product Popularity */}
-                                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                    <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100">
+                                        <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
                                             <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                                            Most Popular Products
+                                            Popular Products
                                         </h3>
-                                        <div className="h-64">
+                                        <div className="h-48 sm:h-64">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <BarChart data={analytics.productData} layout="vertical" margin={{ left: 10, right: 30 }}>
                                                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -755,12 +758,12 @@ const Admin = () => {
                                     </div>
 
                                     {/* Delivery vs Pickup */}
-                                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                    <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100">
+                                        <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
                                             <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                                            Delivery Method Breakdown
+                                            Delivery Breakdown
                                         </h3>
-                                        <div className="h-64 flex items-center justify-center">
+                                        <div className="h-48 sm:h-64 flex items-center justify-center">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <PieChart>
                                                     <Pie
