@@ -81,7 +81,7 @@ const FlavorCard = ({ product, index, stockMap }) => {
             <div className="flex flex-col h-full rounded-[2rem] overflow-hidden">
                 {/* Image Area - Updated for Bleed Effect */}
                 <div
-                    className="relative h-72 bg-gray-50 flex items-center justify-center cursor-pointer" // Increased height, removed overflow-hidden here initially, but keeping it on parent for rounded corners? 
+                    className="relative h-56 bg-gray-50 flex items-center justify-center cursor-pointer" // Increased height, removed overflow-hidden here initially, but keeping it on parent for rounded corners? 
                     // Wait, if we want bleed, we can't have overflow-hidden on the parent "rounded-[2rem]" container if the image goes OUTSIDE.
                     // But if the image is just "floating" inside a larger header area, it's fine.
                     // The user said "getting cut out from the card as the image is going past the bottom".
@@ -196,7 +196,7 @@ const FlavorCard = ({ product, index, stockMap }) => {
                 </div>
 
                 {/* Content Area */}
-                <div className="p-8 pt-24 flex flex-col flex-grow bg-white relative z-20">
+                <div className="p-6 pt-4 flex flex-col flex-grow bg-white relative z-20">
                     <div className="mb-4">
                         <div className="flex justify-between items-start mb-2">
                             <h3 className="text-2xl font-display font-bold text-gray-900 leading-tight">{product.name}</h3>

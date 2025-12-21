@@ -3,6 +3,27 @@ import { supabase } from '../utils/supabaseClient';
 import Button from '../components/ui/Button';
 import { Package, ShoppingBag, Plus, Minus, RefreshCw, Archive, CheckCircle, AlertTriangle, BarChart3, TrendingUp, DollarSign, Users, Truck, MapPin } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
+import { products as productCatalog } from '../data/products';
+
+// Helper to get product image from SKU
+const getProductImage = (sku) => {
+    for (const product of productCatalog) {
+        if (product.sizes?.some(s => s.sku === sku)) {
+            return product.image;
+        }
+    }
+    return null;
+};
+
+// Helper to get product name from SKU (without size suffix)
+const getProductBaseName = (sku) => {
+    for (const product of productCatalog) {
+        if (product.sizes?.some(s => s.sku === sku)) {
+            return product.name;
+        }
+    }
+    return null;
+};
 
 const Admin = () => {
     const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'inventory' | 'fulfillment' | 'analytics'
@@ -526,65 +547,128 @@ const Admin = () => {
 
                 {activeTab === 'inventory' && (
                     <div className="space-y-6">
-                        <div className="flex justify-end">
+                        {/* Header */}
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900">Stock Management</h2>
+                                <p className="text-sm text-gray-500">Update inventory levels for each product</p>
+                            </div>
                             <button
                                 onClick={fetchInventory}
-                                className="text-sm font-bold text-primary flex items-center gap-2 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors"
+                                className="text-sm font-bold text-primary flex items-center gap-2 hover:bg-blue-50 px-4 py-2 rounded-xl transition-colors border border-blue-100"
                             >
                                 <RefreshCw size={16} /> Refresh
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {products.map(product => (
-                                <div key={product.sku} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-full">
-                                    <div>
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h3 className="font-bold text-gray-900 leading-tight">{product.name}</h3>
-                                            <span className={`px-2 py-0.5 rounded text-xs font-bold ${product.stock_qty > 10 ? 'bg-green-100 text-green-700' : product.stock_qty > 0 ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>
-                                                {product.stock_qty > 0 ? 'In Stock' : 'Sold Out'}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs text-gray-400 font-mono mb-6 truncate" title={product.sku}>{product.sku}</p>
-                                    </div>
+                        {loading && <div className="text-center py-12 text-gray-400">Loading inventory...</div>}
 
-                                    <div className="bg-gray-50 rounded-xl p-3 flex items-center justify-between">
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] uppercase font-bold text-gray-400">Current Stock</span>
-                                            <span className="text-2xl font-bold text-gray-900">{product.stock_qty}</span>
-                                        </div>
+                        {!loading && products.length === 0 && (
+                            <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
+                                <Package className="mx-auto h-12 w-12 text-gray-200 mb-4" />
+                                <h3 className="text-lg font-bold text-gray-900">No Products</h3>
+                                <p className="text-gray-500">No products found in inventory.</p>
+                            </div>
+                        )}
 
-                                        <div className="flex items-center gap-2">
-                                            {/* Quick Actions */}
-                                            <div className="flex flex-col gap-1">
-                                                <button
-                                                    onClick={() => updateStock(product.sku, 5)}
-                                                    className="bg-white border border-green-200 text-green-600 hover:bg-green-50 text-xs font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1"
-                                                >
-                                                    <Plus size={10} /> 5
-                                                </button>
-                                                <button
-                                                    onClick={() => updateStock(product.sku, 1)}
-                                                    className="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1"
-                                                >
-                                                    <Plus size={10} /> 1
-                                                </button>
+                        {!loading && products.length > 0 && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {products.map(product => {
+                                    const productImage = getProductImage(product.sku);
+                                    const baseName = getProductBaseName(product.sku);
+                                    const isLowStock = product.stock_qty > 0 && product.stock_qty <= 10;
+                                    const isSoldOut = product.stock_qty <= 0;
+
+                                    return (
+                                        <div key={product.sku} className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition-all hover:shadow-md ${isSoldOut ? 'border-red-200 bg-red-50/30' : isLowStock ? 'border-orange-200' : 'border-gray-100'
+                                            }`}>
+                                            <div className="flex">
+                                                {/* Product Thumbnail */}
+                                                <div className="w-24 h-24 bg-gray-50 flex items-center justify-center shrink-0 border-r border-gray-100">
+                                                    {productImage ? (
+                                                        <img
+                                                            src={productImage}
+                                                            alt={product.name}
+                                                            className="w-20 h-20 object-contain"
+                                                        />
+                                                    ) : (
+                                                        <Package className="w-8 h-8 text-gray-300" />
+                                                    )}
+                                                </div>
+
+                                                {/* Product Info */}
+                                                <div className="flex-grow p-4 flex flex-col justify-between">
+                                                    <div>
+                                                        <div className="flex justify-between items-start gap-2">
+                                                            <div>
+                                                                <h3 className="font-bold text-gray-900 text-sm leading-tight">{product.name}</h3>
+                                                                {baseName && baseName !== product.name && (
+                                                                    <p className="text-[10px] text-gray-400 mt-0.5">{baseName}</p>
+                                                                )}
+                                                            </div>
+                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${isSoldOut ? 'bg-red-100 text-red-700' :
+                                                                    isLowStock ? 'bg-orange-100 text-orange-700' :
+                                                                        'bg-green-100 text-green-700'
+                                                                }`}>
+                                                                {isSoldOut ? 'SOLD OUT' : isLowStock ? 'LOW' : 'IN STOCK'}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-[10px] text-gray-400 font-mono mt-1 truncate" title={product.sku}>
+                                                            {product.sku}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Stock Controls */}
+                                                    <div className="flex items-center justify-between mt-3">
+                                                        <div className="flex items-center gap-1">
+                                                            <button
+                                                                onClick={() => updateStock(product.sku, -1)}
+                                                                disabled={product.stock_qty <= 0}
+                                                                className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-red-100 hover:text-red-600 text-gray-500 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                                                title="Remove 1"
+                                                            >
+                                                                <Minus size={14} />
+                                                            </button>
+
+                                                            <div className={`w-14 h-8 flex items-center justify-center rounded-lg font-bold text-lg ${isSoldOut ? 'bg-red-100 text-red-700' :
+                                                                    isLowStock ? 'bg-orange-100 text-orange-700' :
+                                                                        'bg-gray-100 text-gray-900'
+                                                                }`}>
+                                                                {product.stock_qty}
+                                                            </div>
+
+                                                            <button
+                                                                onClick={() => updateStock(product.sku, 1)}
+                                                                className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-green-100 hover:text-green-600 text-gray-500 rounded-lg transition-colors"
+                                                                title="Add 1"
+                                                            >
+                                                                <Plus size={14} />
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Quick Add Buttons */}
+                                                        <div className="flex gap-1">
+                                                            <button
+                                                                onClick={() => updateStock(product.sku, 5)}
+                                                                className="px-2 py-1 text-[10px] font-bold bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition-colors"
+                                                            >
+                                                                +5
+                                                            </button>
+                                                            <button
+                                                                onClick={() => updateStock(product.sku, 10)}
+                                                                className="px-2 py-1 text-[10px] font-bold bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition-colors"
+                                                            >
+                                                                +10
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-
-                                            <div className="w-px h-8 bg-gray-200 mx-1"></div>
-
-                                            <button
-                                                onClick={() => updateStock(product.sku, -1)}
-                                                className="w-8 h-8 flex items-center justify-center bg-white border border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 rounded-lg transition-colors"
-                                                title="Remove 1"
-                                            >
-                                                <Minus size={16} />
-                                            </button>
                                         </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 )}
 

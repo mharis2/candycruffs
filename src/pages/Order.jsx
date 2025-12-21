@@ -59,7 +59,7 @@ const ProductItem = ({ product, quantities, updateQuantity, onImageClick, stockM
             animate={{ opacity: 1, y: 0 }}
             className={`bg-white p-4 sm:p-6 rounded-2xl shadow-sm border transition-all ${currentQuantity > 0 ? 'border-primary ring-1 ring-primary shadow-md' : 'border-gray-100'}`}
         >
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 {/* Image */}
                 <motion.div
                     animate={isAnimating ? { scale: [1, 1.05, 1], rotate: [0, 2, -2, 0] } : {}}
@@ -208,7 +208,7 @@ const Order = () => {
         address: '',
         notes: ''
     });
-    const [isPickup, setIsPickup] = useState(false);
+    const [isPickup, setIsPickup] = useState(true);
     const [status, setStatus] = useState('idle');
     const [selectedImage, setSelectedImage] = useState(null);
     const [orderCode, setOrderCode] = useState(null);
@@ -426,16 +426,16 @@ const Order = () => {
 
                         <div className="flex bg-gray-100 p-1 rounded-xl">
                             <button
-                                onClick={() => setIsPickup(false)}
-                                className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${!isPickup ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                            >
-                                Delivery
-                            </button>
-                            <button
                                 onClick={() => setIsPickup(true)}
                                 className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${isPickup ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 Pickup
+                            </button>
+                            <button
+                                onClick={() => setIsPickup(false)}
+                                className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${!isPickup ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                Delivery
                             </button>
                         </div>
                     </div>
@@ -513,21 +513,21 @@ const Order = () => {
                                     <span className="text-gray-600">Subtotal</span>
                                     <span className="font-medium text-gray-900">${subtotal}</span>
                                 </div>
-                                <div className="flex justify-between text-sm items-center">
-                                    <span className="text-gray-600">Delivery Fee</span>
-                                    <div className="text-right">
-                                        {isPickup ? (
-                                            <span className="font-bold text-green-500">FREE</span>
-                                        ) : subtotal >= 70 ? (
-                                            <>
-                                                <span className="text-gray-400 line-through mr-2 text-xs">$15</span>
-                                                <span className="font-bold text-green-500">FREE</span>
-                                            </>
-                                        ) : (
-                                            <span className="font-medium text-gray-900">$15</span>
-                                        )}
+                                {!isPickup && (
+                                    <div className="flex justify-between text-sm items-center">
+                                        <span className="text-gray-600">Delivery Fee</span>
+                                        <div className="text-right">
+                                            {subtotal >= 70 ? (
+                                                <>
+                                                    <span className="text-gray-400 line-through mr-2 text-xs">$15</span>
+                                                    <span className="font-bold text-green-500">FREE</span>
+                                                </>
+                                            ) : (
+                                                <span className="font-medium text-gray-900">$15</span>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                                 <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-100 mt-2">
                                     <span className="text-gray-900">Total</span>
                                     <span className="text-primary">${total}</span>
@@ -620,7 +620,7 @@ const Order = () => {
 
                                 {isPickup && (
                                     <p className="text-xs text-center text-gray-500 mt-4 font-medium">
-                                        Pickup Window: <span className="text-gray-900 font-bold">9 AM - 10 PM</span> daily. Have your Order # ready!
+                                        Pickup Window: <span className="text-gray-900 font-bold">9 AM - 8 PM</span> daily. Have your Order # ready!
                                     </p>
                                 )}
                                 {!isPickup && (

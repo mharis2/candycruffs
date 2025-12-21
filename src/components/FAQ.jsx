@@ -17,11 +17,11 @@ const faqs = [
     },
     {
         question: "Do you ship?",
-        answer: "Currently we only offer shipping/delivery within Edmonton, Alberta. We're keeping it local for now!"
+        answer: "Currently we offer delivery within Edmonton, St. Albert, and Sherwood Park. We're keeping it local for now, but international shipping to Canada and the US is coming soon!"
     },
     {
         question: "Can I pick up my order?",
-        answer: "Yes! You can choose the pickup option at checkout to save on delivery fees. We'll coordinate a time and place with you."
+        answer: "Yes! You can choose the pickup option at checkout to save on delivery fees. The pickup time and location will be sent to you upon order verification."
     }
 ];
 
