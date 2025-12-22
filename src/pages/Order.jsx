@@ -4,12 +4,13 @@ import { useSearchParams } from 'react-router-dom';
 import { products } from '../data/products';
 import Button from '../components/ui/Button';
 import Reveal from '../components/ui/Reveal';
-import { Plus, Minus, ShoppingBag, Truck, CheckCircle, AlertCircle, PartyPopper, Info, ZoomIn } from 'lucide-react';
+import { Plus, Minus, ShoppingBag, Truck, CheckCircle, AlertCircle, PartyPopper, Info, ZoomIn, Sparkles, Package } from 'lucide-react';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import ProductImageModal from '../components/ui/ProductImageModal';
 import { fetchStockData, getStockLevel, subscribeToStockUpdates } from '../utils/inventoryService';
 import { supabase } from '../utils/supabaseClient';
 import { generateOrderCode } from '../utils/orderUtils';
+import { DEALS, calculateMixMatchDiscount, isEligibleForMixMatch, isBundleAvailable } from '../data/deals';
 
 // Helper: Get product and size from a unique key "productId_sizeId"
 const getProductAndSize = (key) => {
@@ -20,19 +21,29 @@ const getProductAndSize = (key) => {
 };
 
 const ProductItem = ({ product, quantities, updateQuantity, onImageClick, stockMap }) => {
-    // Determine the first available size, or default to first if all OOS
+    // Default to Large size if available, otherwise first size
     const [activeSizeId, setActiveSizeId] = useState(() => {
-        const availableSize = product.sizes?.find(s => {
-            // If no SKU (e.g. data error), assume in stock? Or if no map loaded yet.
-            // Best logic: if map is loaded and qty <= 0, skip.
-            if (!s.sku) return true;
-            // If stockMap is empty/loading, perhaps assume in stock? 
-            // Let's assume stockMap is passed. If empty, maybe everything is effectively available or unavailable.
-            // Requirement: "default to Out of Stock depending on safety".
-            // Let's check specific SKU.
-            return getStockLevel(stockMap, s.sku) > 0;
-        });
-        return availableSize ? availableSize.id : (product.sizes?.[0]?.id || 'reg');
+        // First try to find Large size
+        const largeSize = product.sizes?.find(s => s.name === 'Large' || s.id === 'lrg');
+        if (largeSize) {
+            // If stock data is loaded and Large is out of stock, find alternative
+            if (stockMap && stockMap.size > 0 && largeSize.sku) {
+                const largeStock = getStockLevel(stockMap, largeSize.sku);
+                if (largeStock <= 0) {
+                    // Large is out of stock, find first available
+                    const availableSize = product.sizes?.find(s => {
+                        if (!s.sku) return true;
+                        return getStockLevel(stockMap, s.sku) > 0;
+                    });
+                    return availableSize ? availableSize.id : largeSize.id;
+                }
+            }
+            // Large is available or stock data not loaded yet - default to Large
+            return largeSize.id;
+        }
+
+        // No Large size exists, fall back to first size
+        return product.sizes?.[0]?.id || 'lrg';
     });
 
     const activeSize = product.sizes?.find(s => s.id === activeSizeId);
@@ -115,12 +126,20 @@ const ProductItem = ({ product, quantities, updateQuantity, onImageClick, stockM
                         </div>
                     </div>
 
-                    {/* Size Selector */}
+                    {/* Size Selector - Large First */}
                     {product.sizes && product.sizes.length > 1 && (
                         <div className="flex bg-gray-100 p-1 rounded-lg w-max mb-4">
-                            {product.sizes.map(size => {
+                            {/* Reorder sizes to show Large first */}
+                            {[...product.sizes].sort((a, b) => {
+                                const aIsLarge = a.name === 'Large' || a.id === 'lrg';
+                                const bIsLarge = b.name === 'Large' || b.id === 'lrg';
+                                if (aIsLarge && !bIsLarge) return -1;
+                                if (!aIsLarge && bIsLarge) return 1;
+                                return 0;
+                            }).map(size => {
                                 const stock = size.sku ? getStockLevel(stockMap, size.sku) : 0;
                                 const isOOS = stock <= 0;
+                                const isLarge = size.name === 'Large' || size.id === 'lrg';
 
                                 return (
                                     <button
@@ -130,9 +149,13 @@ const ProductItem = ({ product, quantities, updateQuantity, onImageClick, stockM
                                         className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 
                                         ${activeSizeId === size.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}
                                         ${isOOS ? 'opacity-50 cursor-not-allowed bg-gray-200/50' : ''}
+                                        ${isLarge && DEALS.mixAndMatch.active ? 'ring-1 ring-amber-300' : ''}
                                     `}
                                     >
                                         {size.name}
+                                        {isLarge && DEALS.mixAndMatch.active && (
+                                            <span className="text-[8px] uppercase tracking-wide text-amber-600 font-bold">Deal</span>
+                                        )}
                                         {isOOS ? (
                                             <span className="text-[9px] uppercase tracking-wide text-red-500 font-extrabold">(Sold Out)</span>
                                         ) : (
@@ -182,6 +205,7 @@ const ProductItem = ({ product, quantities, updateQuantity, onImageClick, stockM
 const Order = () => {
     const [searchParams] = useSearchParams();
     const initialProductId = searchParams.get('product');
+    const initialBundle = searchParams.get('bundle');
 
     // State tracks quantities by "productId_sizeId" keys
     const [quantities, setQuantities] = useState({});
@@ -215,6 +239,7 @@ const Order = () => {
     const [addressValid, setAddressValid] = useState(true);
 
     useEffect(() => {
+        // Handle product URL parameter
         if (initialProductId) {
             const product = products.find(p => p.id === initialProductId);
             if (product && product.sizes?.length > 0) {
@@ -223,8 +248,14 @@ const Order = () => {
                 setQuantities(prev => ({ ...prev, [`${initialProductId}_${defaultSizeId}`]: 1 }));
             }
         }
+
+        // Handle bundle URL parameter
+        if (initialBundle === 'full-collection') {
+            setQuantities(prev => ({ ...prev, 'full-collection-bundle_bundle': 1 }));
+        }
+
         window.scrollTo(0, 0);
-    }, [initialProductId]);
+    }, [initialProductId, initialBundle]);
 
     const updateQuantity = (productId, sizeId, delta) => {
         const key = `${productId}_${sizeId}`;
@@ -240,23 +271,48 @@ const Order = () => {
 
     const calculateTotal = () => {
         let subtotal = 0;
+        let bundleTotal = 0;
+
         Object.keys(quantities).forEach(key => {
             const count = quantities[key];
+
+            // Handle bundle separately
+            if (key === 'full-collection-bundle_bundle') {
+                bundleTotal += DEALS.collectionBundle.salePrice * count;
+                return;
+            }
+
             const { size } = getProductAndSize(key);
             if (size) {
                 subtotal += size.price * count;
             }
         });
 
+        // Calculate Mix & Match discount
+        const { savings: mixMatchSavings, dealSets, eligibleCount } = calculateMixMatchDiscount(quantities, getProductAndSize);
+
+        // Apply discount to subtotal
+        const discountedSubtotal = subtotal - mixMatchSavings;
+        const totalBeforeDelivery = discountedSubtotal + bundleTotal;
+
+        // Delivery fee calculation - FREE if total order (including bundles) >= $70
         let deliveryFee = 15;
-        if (isPickup || subtotal >= 70) {
+        if (isPickup || totalBeforeDelivery >= 70) {
             deliveryFee = 0;
         }
 
-        return { subtotal, deliveryFee, total: subtotal + deliveryFee };
+        return {
+            subtotal: subtotal + bundleTotal,
+            mixMatchSavings,
+            dealSets,
+            eligibleCount,
+            bundleTotal,
+            deliveryFee,
+            total: totalBeforeDelivery + deliveryFee
+        };
     };
 
-    const { subtotal, deliveryFee, total } = calculateTotal();
+    const { subtotal, mixMatchSavings, dealSets, eligibleCount, bundleTotal, deliveryFee, total } = calculateTotal();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -279,12 +335,48 @@ const Order = () => {
         setOrderCode(code);
 
         // Prepare order items
-        const orderItems = Object.keys(quantities).map(key => {
-            const { product, size } = getProductAndSize(key);
-            const count = quantities[key];
-            if (!product || !size || count === 0) return null;
+        const orderItems = [];
 
-            return {
+        Object.keys(quantities).forEach(key => {
+            const count = quantities[key];
+            if (count === 0) return;
+
+            // Handle bundle item - create individual items for each component product
+            if (key === 'full-collection-bundle_bundle') {
+                // Add individual component items with proper names (for both display AND stock decrement)
+                // These use the includedItems array which has SKU and name
+                DEALS.collectionBundle.includedItems.forEach(item => {
+                    orderItems.push({
+                        sku: item.sku,
+                        name: item.name,
+                        quantity: count,
+                        price: 10, // Each Large bag is $10
+                        isBundle: true,
+                        isBundleComponent: true,
+                        bundleParent: DEALS.collectionBundle.sku
+                    });
+                });
+
+                // Add a bundle indicator item at the end (for admin/display - not for stock)
+                orderItems.push({
+                    id: DEALS.collectionBundle.id,
+                    sku: DEALS.collectionBundle.sku,
+                    name: '📦 FULL COLLECTION BUNDLE',
+                    size: 'Bundle',
+                    weight: null,
+                    price: DEALS.collectionBundle.salePrice,
+                    quantity: count,
+                    image: DEALS.collectionBundle.image,
+                    isBundle: true,
+                    isBundleDisplay: true // Flag for display purposes - not for stock
+                });
+                return;
+            }
+
+            const { product, size } = getProductAndSize(key);
+            if (!product || !size) return;
+
+            orderItems.push({
                 id: product.id, // Original ID reference
                 sku: size.sku,
                 name: `${product.name} (${size.name})`, // Append size to name for clarity
@@ -293,16 +385,23 @@ const Order = () => {
                 price: size.price,
                 quantity: count,
                 image: product.image
-            };
-        }).filter(Boolean);
+            });
+        });
+
+        // Filter items for different purposes
+        const displayItems = orderItems.filter(item => !item.isBundleComponent);
+        const stockItems = orderItems.filter(item => !item.isBundleDisplay);
+
 
         try {
             // 1. Place Order in Supabase (Transaction)
             const deliveryType = isPickup ? 'pickup' : 'delivery';
             const shippingAddress = isPickup ? null : formData.address;
 
+            // Send ALL items to RPC - it will skip display items during stock decrement
+            // but store them for admin/display purposes
             const { data, error: orderError } = await supabase.rpc('place_order', {
-                order_items: orderItems,
+                order_items: orderItems, // All items including bundle display indicator
                 customer_email: formData.email,
                 customer_name: formData.name,
                 customer_phone: formData.phone,
@@ -327,7 +426,7 @@ const Order = () => {
                     subtotal,
                     deliveryFee,
                     deliveryType: isPickup ? 'pickup' : 'delivery',
-                    items: orderItems
+                    items: displayItems // Use displayItems for customer-facing email (shows bundle, not components)
                 })
             }).catch(err => console.error("Email trigger failed:", err));
 
@@ -469,16 +568,147 @@ const Order = () => {
                     <div className="lg:col-span-2 space-y-6">
                         <h2 className="text-2xl font-display font-bold text-gray-900 mb-6">Select Your Treats</h2>
 
-                        {products.map(product => (
-                            <ProductItem
-                                key={product.id}
-                                product={product}
-                                quantities={quantities}
-                                updateQuantity={updateQuantity}
-                                onImageClick={(img) => setSelectedImage(img)}
-                                stockMap={stockMap}
-                            />
-                        ))}
+                        {/* Bundle Card - Launch Week Deal */}
+                        {DEALS.collectionBundle.active && (() => {
+                            const bundleInStock = isBundleAvailable(stockMap, getStockLevel);
+
+                            return (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className={`bg-gradient-to-br from-amber-50 via-white to-orange-50 p-4 sm:p-6 rounded-2xl shadow-lg border-2 transition-all ${!bundleInStock
+                                        ? 'border-gray-300 opacity-75'
+                                        : quantities['full-collection-bundle_bundle'] > 0
+                                            ? 'border-amber-400 ring-2 ring-amber-400/50 shadow-amber-100'
+                                            : 'border-amber-200/70'
+                                        }`}
+                                >
+                                    {/* Deal Badge */}
+                                    <div className="flex items-center gap-2 mb-4">
+                                        {bundleInStock ? (
+                                            <>
+                                                <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
+                                                    <Sparkles size={12} />
+                                                    LAUNCH WEEK DEAL
+                                                </span>
+                                                <span className="text-amber-600 text-xs font-bold">Save ${DEALS.collectionBundle.savings}!</span>
+                                            </>
+                                        ) : (
+                                            <span className="bg-gray-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
+                                                <AlertCircle size={12} />
+                                                SOLD OUT
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row gap-4">
+                                        {/* Image */}
+                                        <div className={`w-full sm:w-32 h-48 sm:h-32 bg-gradient-to-br from-amber-100/50 to-orange-100/50 rounded-xl flex items-center justify-center shrink-0 relative overflow-hidden ${!bundleInStock && 'grayscale opacity-60'}`}>
+                                            <img
+                                                src={DEALS.collectionBundle.image}
+                                                alt={DEALS.collectionBundle.name}
+                                                className="w-full h-full object-contain p-2"
+                                            />
+                                        </div>
+
+                                        <div className="flex-grow">
+                                            <div className="flex flex-col sm:flex-row justify-between items-start mb-2 gap-2">
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <Package size={18} className={bundleInStock ? 'text-amber-500' : 'text-gray-400'} />
+                                                        <h3 className="font-bold text-gray-900 text-lg">{DEALS.collectionBundle.name}</h3>
+                                                    </div>
+                                                    <p className="text-sm text-gray-500">{DEALS.collectionBundle.tagline}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="flex items-center gap-2 justify-end">
+                                                        <span className="text-gray-400 line-through text-sm">${DEALS.collectionBundle.originalPrice}</span>
+                                                        <span className={`font-bold text-2xl ${bundleInStock ? 'text-amber-600' : 'text-gray-500'}`}>${DEALS.collectionBundle.salePrice}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <p className="text-xs text-gray-500 mb-4">
+                                                Includes: Shark Bite Crunch, Neon Worm Crisps, Crystal Bear Bites, Cola Fizz Crunch & Prism Pops
+                                            </p>
+
+                                            {/* Quantity Controls or Sold Out */}
+                                            {bundleInStock ? (
+                                                <div className="flex items-center gap-4">
+                                                    <div className="flex items-center bg-amber-50 rounded-lg border border-amber-200">
+                                                        <button
+                                                            onClick={() => {
+                                                                const key = 'full-collection-bundle_bundle';
+                                                                setQuantities(prev => {
+                                                                    const current = prev[key] || 0;
+                                                                    const next = Math.max(0, current - 1);
+                                                                    const newQuantities = { ...prev, [key]: next };
+                                                                    if (next === 0) delete newQuantities[key];
+                                                                    return newQuantities;
+                                                                });
+                                                            }}
+                                                            className="p-2 hover:bg-amber-100 text-amber-700 rounded-l-lg transition-colors"
+                                                        >
+                                                            <Minus size={16} />
+                                                        </button>
+                                                        <span className="w-8 text-center font-bold text-gray-900">
+                                                            {quantities['full-collection-bundle_bundle'] || 0}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => {
+                                                                const key = 'full-collection-bundle_bundle';
+                                                                setQuantities(prev => ({
+                                                                    ...prev,
+                                                                    [key]: (prev[key] || 0) + 1
+                                                                }));
+                                                            }}
+                                                            className="p-2 hover:bg-amber-100 text-amber-700 rounded-r-lg transition-colors"
+                                                        >
+                                                            <Plus size={16} />
+                                                        </button>
+                                                    </div>
+                                                    {quantities['full-collection-bundle_bundle'] > 0 && (
+                                                        <span className="text-sm text-amber-600 font-medium">
+                                                            Added to cart!
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="bg-gray-100 text-gray-500 text-sm font-bold px-4 py-2 rounded-lg inline-block">
+                                                    Currently Unavailable
+                                                </div>
+                                            )}
+
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        })()}
+                        {/* Mix & Match Info Banner */}
+                        {DEALS.mixAndMatch.active && (
+                            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3">
+                                <div className="bg-emerald-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0">3</div>
+                                <div>
+                                    <p className="text-emerald-800 font-medium text-sm">
+                                        <span className="font-bold">3-for-$27 Deal:</span> Select any 3 Large bags and save $3 automatically!
+                                    </p>
+                                    <p className="text-emerald-600 text-xs">Stacks with multiple sets • {eligibleCount > 0 ? `${eligibleCount} eligible item(s) selected` : 'Add Large bags below'}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {
+                            products.map(product => (
+                                <ProductItem
+                                    key={product.id}
+                                    product={product}
+                                    quantities={quantities}
+                                    updateQuantity={updateQuantity}
+                                    onImageClick={(img) => setSelectedImage(img)}
+                                    stockMap={stockMap}
+                                />
+                            ))
+                        }
                     </div>
 
                     {/* Right Column: Order Summary & Form */}
@@ -490,6 +720,25 @@ const Order = () => {
                                 {Object.keys(quantities).map(key => {
                                     const count = quantities[key];
                                     if (count === 0) return null;
+
+                                    // Handle bundle item separately
+                                    if (key === 'full-collection-bundle_bundle') {
+                                        return (
+                                            <div key={key} className="flex justify-between text-sm items-start bg-amber-50/50 -mx-2 px-2 py-2 rounded-lg">
+                                                <span className="text-amber-800">
+                                                    <span className="flex items-center gap-1.5">
+                                                        <Package size={14} className="text-amber-500" />
+                                                        {DEALS.collectionBundle.name}
+                                                    </span>
+                                                    <span className="text-amber-600/70 ml-1 block text-xs">
+                                                        ${DEALS.collectionBundle.salePrice} x {count}
+                                                    </span>
+                                                </span>
+                                                <span className="font-medium text-amber-800">${DEALS.collectionBundle.salePrice * count}</span>
+                                            </div>
+                                        );
+                                    }
+
                                     const { product, size } = getProductAndSize(key);
                                     if (!product || !size) return null;
 
@@ -513,6 +762,15 @@ const Order = () => {
                                     <span className="text-gray-600">Subtotal</span>
                                     <span className="font-medium text-gray-900">${subtotal}</span>
                                 </div>
+                                {mixMatchSavings > 0 && (
+                                    <div className="flex justify-between text-sm items-center bg-green-50 -mx-2 px-2 py-1.5 rounded-lg">
+                                        <span className="text-green-700 font-medium flex items-center gap-1.5">
+                                            <Sparkles size={14} className="text-green-500" />
+                                            Launch Week Deal Applied
+                                        </span>
+                                        <span className="font-bold text-green-600">-${mixMatchSavings}</span>
+                                    </div>
+                                )}
                                 {!isPickup && (
                                     <div className="flex justify-between text-sm items-center">
                                         <span className="text-gray-600">Delivery Fee</span>
@@ -532,6 +790,20 @@ const Order = () => {
                                     <span className="text-gray-900">Total</span>
                                     <span className="text-primary">${total}</span>
                                 </div>
+
+                                {/* Total Savings Display */}
+                                {mixMatchSavings > 0 && (
+                                    <div className="mt-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl px-4 py-3 text-center">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <Sparkles size={16} className="text-green-500" />
+                                            <span className="text-green-800 font-bold">
+                                                You're saving ${mixMatchSavings}!
+                                            </span>
+                                            <Sparkles size={16} className="text-green-500" />
+                                        </div>
+                                        <p className="text-xs text-green-600 mt-1">with Launch Week deals</p>
+                                    </div>
+                                )}
 
                                 {/* Mobile Toggle for Pickup/Delivery */}
                                 <div className="pt-4 border-t border-gray-100 lg:hidden">
@@ -595,6 +867,7 @@ const Order = () => {
                                         type="email"
                                         required
                                         className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                                        placeholder="example@email.com"
                                         value={formData.email}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
                                     />
@@ -673,11 +946,11 @@ const Order = () => {
                                 )}
                             </form>
                         </div>
-                    </div>
-                </div>
+                    </div >
+                </div >
 
                 {/* Parties & Weddings Section */}
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-8 rounded-[2rem] border border-purple-100 mt-12 text-center relative overflow-hidden">
+                < div className="bg-gradient-to-r from-purple-50 to-pink-50 p-8 rounded-[2rem] border border-purple-100 mt-12 text-center relative overflow-hidden" >
                     <div className="relative z-10">
                         <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm text-purple-500">
                             <PartyPopper size={24} />
@@ -690,15 +963,15 @@ const Order = () => {
                             Contact Us
                         </Button>
                     </div>
-                </div>
-            </div>
+                </div >
+            </div >
 
             <ProductImageModal
                 isOpen={!!selectedImage}
                 onClose={() => setSelectedImage(null)}
                 image={selectedImage}
             />
-        </div>
+        </div >
     );
 };
 

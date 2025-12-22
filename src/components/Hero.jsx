@@ -3,7 +3,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Button from './ui/Button';
 import Reveal from './ui/Reveal';
-import { ArrowRight, Star } from 'lucide-react';
+import { ArrowRight, Star, Sparkles, PartyPopper, Gift } from 'lucide-react';
 
 const Hero = () => {
     const ref = useRef(null);
@@ -32,6 +32,82 @@ const Hero = () => {
             </div>
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                {/* Grand Opening Banner */}
+                <motion.div
+                    initial={{ opacity: 0, y: -30, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className="mb-8 lg:mb-12"
+                >
+                    <div className="relative bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 rounded-2xl py-4 px-6 md:py-5 md:px-8 shadow-2xl border-2 border-amber-300 overflow-hidden">
+                        {/* Animated Sparkle Background */}
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                            {[...Array(8)].map((_, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, scale: 0 }}
+                                    animate={{
+                                        opacity: [0, 1, 0],
+                                        scale: [0, 1.5, 0],
+                                        rotate: [0, 180, 360]
+                                    }}
+                                    transition={{
+                                        duration: 2,
+                                        delay: i * 0.3,
+                                        repeat: Infinity,
+                                        repeatDelay: 1
+                                    }}
+                                    className="absolute text-amber-600/40"
+                                    style={{
+                                        left: `${10 + i * 12}%`,
+                                        top: `${20 + (i % 3) * 25}%`
+                                    }}
+                                >
+                                    <Sparkles size={16} />
+                                </motion.div>
+                            ))}
+                        </div>
+
+                        {/* Shimmer Effect */}
+                        <motion.div
+                            animate={{ x: ['-100%', '200%'] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none"
+                            style={{ width: '50%' }}
+                        />
+
+                        {/* Content */}
+                        <div className="relative z-10 flex flex-col md:flex-row items-center justify-center gap-3 text-center">
+                            <motion.div
+                                animate={{ rotate: [0, 15, -15, 0] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                            >
+                                <PartyPopper size={28} className="text-amber-700" />
+                            </motion.div>
+                            <div>
+                                <h2 className="text-lg md:text-2xl lg:text-3xl font-display font-black text-amber-900 tracking-tight">
+                                    🎉 GRAND OPENING LAUNCH WEEK! 🎉
+                                </h2>
+                                <p className="text-amber-800 text-xs md:text-sm font-medium">
+                                    Exclusive deals & free shipping on orders $70+ • Limited time only!
+                                </p>
+                            </div>
+                            <motion.div
+                                animate={{ rotate: [0, -15, 15, 0] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                            >
+                                <Gift size={28} className="text-amber-700" />
+                            </motion.div>
+                        </div>
+
+                        {/* Decorative corners */}
+                        <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-amber-600/30 rounded-tl" />
+                        <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-amber-600/30 rounded-tr" />
+                        <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-amber-600/30 rounded-bl" />
+                        <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-amber-600/30 rounded-br" />
+                    </div>
+                </motion.div>
+
                 <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
                     {/* Text Content */}
                     <motion.div

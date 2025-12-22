@@ -6,6 +6,8 @@ import Reveal from './ui/Reveal';
 import { products } from '../data/products';
 import { ShoppingBag } from 'lucide-react';
 import { fetchStockData, getStockLevel, subscribeToStockUpdates } from '../utils/inventoryService';
+import LaunchDeals from './LaunchDeals';
+import { isEligibleForMixMatch, DEALS } from '../data/deals';
 
 const FlavorCard = ({ product, index, stockMap }) => {
     const x = useMotionValue(0);
@@ -49,11 +51,13 @@ const FlavorCard = ({ product, index, stockMap }) => {
         }
     };
 
-    // Calculate Price Range
-    const prices = product.sizes?.map(s => s.price) || [];
-    const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
-    const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
-    const priceDisplay = minPrice === maxPrice ? `$${minPrice}` : `From $${minPrice}`;
+    // Calculate Price - Show Large price by default if available
+    const largeSize = product.sizes?.find(s => s.name === 'Large' || s.id === 'lrg');
+    const defaultPrice = largeSize?.price || product.sizes?.[0]?.price || 0;
+    const priceDisplay = `$${defaultPrice}`;
+
+    // Check if product has any size eligible for Mix & Match deal
+    const hasEligibleSize = product.sizes?.some(size => isEligibleForMixMatch(size));
 
     // Check Stock Status
     let isFullySoldOut = true;
@@ -209,6 +213,11 @@ const FlavorCard = ({ product, index, stockMap }) => {
                                         Low in Stock!
                                     </span>
                                 )}
+                                {hasEligibleSize && DEALS.mixAndMatch.active && (
+                                    <span className="text-[9px] font-bold text-amber-600 mt-1 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                        3-for-$27 Deal
+                                    </span>
+                                )}
                             </div>
                         </div>
                         {/* Tagline */}
@@ -271,6 +280,9 @@ const Flavors = () => {
                         </p>
                     </Reveal>
                 </div>
+
+                {/* Launch Week Deals Banner */}
+                <LaunchDeals stockMap={stockMap} />
 
                 <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8 lg:gap-12 max-w-5xl mx-auto perspective-1000">
                     {products.map((product, index) => (
