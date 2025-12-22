@@ -170,7 +170,7 @@ app.post('/api/emails/paid', async (req, res) => {
                 </a>
                 <p style="margin-top: 16px; font-size: 14px; color: #166534;">
                     <strong>Start Heading Over!</strong><br/>
-                    Pickup Hours: <strong>9 AM - 10 PM</strong> daily.<br/>
+                    Pickup Hours: <strong>9 AM - 8 PM</strong> daily.<br/>
                     Please text or email us when you are on your way so we can have it ready at the door.<br/>
                     <strong>Call/Text:</strong> +1 (780) 782-3795<br/>
                     <strong>Email:</strong> candycruffs@gmail.com

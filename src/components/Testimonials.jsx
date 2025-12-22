@@ -170,6 +170,7 @@ const TestimonialCard = ({ testimonial }) => (
 const Testimonials = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [direction, setDirection] = useState(0);
+    const [isPaused, setIsPaused] = useState(false);
 
     const nextSlide = useCallback(() => {
         setDirection(1);
@@ -181,11 +182,12 @@ const Testimonials = () => {
         setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
     }, []);
 
-    // Auto-play
+    // Auto-play (pauses on user interaction)
     useEffect(() => {
+        if (isPaused) return;
         const timer = setInterval(nextSlide, 5000);
         return () => clearInterval(timer);
-    }, [nextSlide]);
+    }, [nextSlide, isPaused]);
 
     const slideVariants = {
         enter: (direction) => ({
@@ -221,7 +223,13 @@ const Testimonials = () => {
                 </div>
 
                 {/* Carousel Container */}
-                <div className="relative max-w-3xl mx-auto">
+                <div
+                    className="relative max-w-3xl mx-auto"
+                    onMouseEnter={() => setIsPaused(true)}
+                    onMouseLeave={() => setIsPaused(false)}
+                    onTouchStart={() => setIsPaused(true)}
+                    onTouchEnd={() => setIsPaused(false)}
+                >
                     {/* Navigation Arrows */}
                     <button
                         onClick={prevSlide}
