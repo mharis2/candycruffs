@@ -11,15 +11,15 @@ export const testimonials = [
     },
     {
         id: 2,
-        name: "Mike T.",
-        quote: "Bought these for my kids, ended up eating the whole bag myself. Sorry not sorry!",
+        name: "Tayyaba W.",
+        quote: "I’ve always wanted to try freeze-dried candy but couldn’t find halal ones before. These were so fun and crunchy. The Coca-Cola ones are the best, and the shark ones have the most satisfying chalky crunch — the ASMR is so good!!!!!! 10/10",
         rating: 5,
         verified: true
     },
     {
         id: 3,
-        name: "Emily R.",
-        quote: "The texture is insane. It literally melts in your mouth. Best snack ever.",
+        name: "Keshaf W.",
+        quote: "Every bite is bursting with flavour, with the most satisfying crunch that keeps me addicted fr ",
         rating: 5,
         verified: true
     },
