@@ -183,7 +183,8 @@ const Admin = () => {
 
     const handleLogin = (e) => {
         e.preventDefault();
-        if (password === 'admin123') setAuthorized(true);
+        const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
+        if (password === adminPassword) setAuthorized(true);
         else alert('Incorrect password');
     };
 
