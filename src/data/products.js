@@ -15,11 +15,11 @@ export const products = [
     {
         id: 'neon-worm-crisps',
         name: 'Neon Worm Crisps',
-        tagline: 'Twisted neon worms with an electric sour crunch.',
-        description: 'Bright neon sour gummy worms freeze dried into ultra-light, crackly coils that hit with a tangy crunch.',
+        tagline: 'Twisted neon worms with an electric sweet crunch.',
+        description: 'Bright neon gummy worms freeze dried into ultra-light, crackly coils that hit with a sweet crunch.',
         image: '/assets/neon-worm-crunch.webp',
         sizeComparisonImage: '/assets/neon-worm-crisps-sizes.webp',
-        badges: ['HALAL', 'SOUR', 'NEON'],
+        badges: ['HALAL', 'SWEET', 'NEON'],
         sizes: [
             { id: 'reg', name: 'Regular', weight: '50g', price: 8, sku: 'NEON-WORM-CRISPS-REG' },
             { id: 'lrg', name: 'Large', weight: '120g', price: 10, sku: 'NEON-WORM-CRISPS-LRG' }

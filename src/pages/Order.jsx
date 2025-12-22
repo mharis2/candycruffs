@@ -532,6 +532,49 @@ const Order = () => {
                                     <span className="text-gray-900">Total</span>
                                     <span className="text-primary">${total}</span>
                                 </div>
+
+                                {/* Mobile Toggle for Pickup/Delivery */}
+                                <div className="pt-4 border-t border-gray-100 lg:hidden">
+                                    <div className="flex bg-gray-100 p-1 rounded-xl">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsPickup(true)}
+                                            className={`px-4 py-2 w-1/2 rounded-lg text-sm font-bold transition-all ${isPickup ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                        >
+                                            Pickup
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsPickup(false)}
+                                            className={`px-4 py-2 w-1/2 rounded-lg text-sm font-bold transition-all ${!isPickup ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                        >
+                                            Delivery
+                                        </button>
+                                    </div>
+
+                                    {/* Same info as top banner */}
+                                    <div className="mt-3 flex items-center gap-3 text-xs">
+                                        <div className={`p-2 rounded-full shrink-0 ${isPickup ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+                                            {isPickup ? <ShoppingBag size={16} /> : <Truck size={16} />}
+                                        </div>
+                                        <p className="text-gray-600">
+                                            {isPickup
+                                                ? 'Pickup in Millwoods, Edmonton. Exact location sent in confirmation email.'
+                                                : 'Currently delivering to Edmonton, St. Albert & Sherwood Park within 3-7 business days.'}
+                                        </p>
+                                    </div>
+
+                                    {!isPickup && (
+                                        <div className="mt-3 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                            <ul className="text-blue-700 text-xs space-y-1 list-disc list-inside">
+                                                <li>Free delivery on orders over $70</li>
+                                                <li>$15 delivery fee for orders under $70</li>
+                                                <li><strong>Delivery Area:</strong> Edmonton, St. Albert & Sherwood Park</li>
+                                                <li><strong>Estimated delivery:</strong> 3-7 business days</li>
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-4">
@@ -643,9 +686,9 @@ const Order = () => {
                         <p className="text-gray-600 mb-4 max-w-md mx-auto">
                             Planning a special event? We offer custom bulk orders and party favors to make your celebration extra sweet.
                         </p>
-                        <span className="inline-block bg-white px-4 py-2 rounded-full text-xs font-bold tracking-wider text-purple-600 shadow-sm border border-purple-100">
-                            COMING SOON
-                        </span>
+                        <Button onClick={() => window.location.href = '/contact'} className="bg-white text-purple-600 hover:bg-purple-50 border border-purple-200">
+                            Contact Us
+                        </Button>
                     </div>
                 </div>
             </div>

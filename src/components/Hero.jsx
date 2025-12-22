@@ -68,11 +68,9 @@ const Hero = () => {
                                         <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                                     </Button>
                                 </Link>
-                                <button onClick={scrollToFlavors} className="w-full sm:w-auto">
-                                    <Button variant="outline" size="lg" className="w-full pointer-events-none">
-                                        View Flavors
-                                    </Button>
-                                </button>
+                                <Button variant="outline" size="lg" className="w-full sm:w-auto" onClick={scrollToFlavors}>
+                                    View Flavours
+                                </Button>
                             </div>
                         </Reveal>
                     </motion.div>

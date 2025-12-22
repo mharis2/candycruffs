@@ -274,6 +274,30 @@ app.post('/api/emails/fulfilled', async (req, res) => {
     res.json({ success: true });
 });
 
+// 5. Contact / Review Form
+app.post('/api/contact', async (req, res) => {
+    const { name, email, message } = req.body;
+
+    const subject = email.includes('candycruffs.review')
+        ? `New Review from ${name} ⭐`
+        : `New Contact Message from ${name}`;
+
+    const html = `
+        <div style="font-family: sans-serif; color: #333; max-width: 600px;">
+            <h2 style="color: #6d28d9;">${subject}</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                <p style="margin: 0; white-space: pre-wrap;">${message}</p>
+            </div>
+        </div>
+    `;
+
+    // Send to Admin
+    await sendEmail(process.env.EMAIL_USER, subject, html);
+    res.json({ success: true });
+});
+
 // Health Check
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

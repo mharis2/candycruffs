@@ -24,7 +24,7 @@ const Layout = ({ children }) => {
 
     const navLinks = [
         { name: 'Home', path: '/' },
-        { name: 'Flavors', path: '/#flavors' }, // Anchor link for home
+        { name: 'Flavours', path: '/#flavors' }, // Anchor link for home
         { name: 'About', path: '/#about' },
     ];
     return (
