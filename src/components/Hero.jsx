@@ -89,7 +89,7 @@ const Hero = () => {
                                     🎉 GRAND OPENING LAUNCH WEEK! 🎉
                                 </h2>
                                 <p className="text-amber-800 text-xs md:text-sm font-medium">
-                                    Exclusive deals & free shipping on orders $70+ • Limited time only!
+                                    Exclusive deals & free delivery on orders $70+ • Limited time only!
                                 </p>
                             </div>
                             <motion.div

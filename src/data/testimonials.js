@@ -19,10 +19,17 @@ export const testimonials = [
     {
         id: 3,
         name: "Keshaf W.",
-        quote: "Every bite is bursting with flavour, with the most satisfying crunch that keeps me addicted fr ",
+        quote: "Every bite is bursting with flavour, with the most satisfying crunch that keeps me addicted fr",
         rating: 5,
         verified: true
     },
+    {
+        id: 4,
+        name: "Muhammad I.",
+        quote: "The prism pops are by far my favourite. Super crunchy, sour, and they melt in your mouth. 11/10!",
+        rating: 5,
+        verified: true
+    }
 
 ];
 
