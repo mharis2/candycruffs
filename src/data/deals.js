@@ -135,3 +135,24 @@ export const getBundleOrderItems = (bundleQuantity) => {
         quantity: bundleQuantity
     }));
 };
+
+/**
+ * Get the maximum quantity of bundles that can be ordered based on component stock
+ * @param {Map} stockMap - Map of SKU to stock quantity
+ * @param {Function} getStockLevel - Helper function to get stock from map
+ * @returns {number} Maximum number of bundles available
+ */
+export const getMaxBundleQuantity = (stockMap, getStockLevel) => {
+    const bundle = DEALS.collectionBundle;
+    if (!bundle.active || !stockMap || stockMap.size === 0) return 0;
+
+    // Find minimum stock across all component SKUs
+    let minStock = Infinity;
+    for (const sku of bundle.includedSKUs) {
+        const stock = getStockLevel(stockMap, sku);
+        if (stock < minStock) {
+            minStock = stock;
+        }
+    }
+    return minStock === Infinity ? 0 : Math.max(0, minStock);
+};

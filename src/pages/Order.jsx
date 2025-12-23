@@ -10,7 +10,7 @@ import ProductImageModal from '../components/ui/ProductImageModal';
 import { fetchStockData, getStockLevel, subscribeToStockUpdates } from '../utils/inventoryService';
 import { supabase } from '../utils/supabaseClient';
 import { generateOrderCode } from '../utils/orderUtils';
-import { DEALS, calculateMixMatchDiscount, isEligibleForMixMatch, isBundleAvailable } from '../data/deals';
+import { DEALS, calculateMixMatchDiscount, isEligibleForMixMatch, isBundleAvailable, getMaxBundleQuantity } from '../data/deals';
 
 // Helper: Get product and size from a unique key "productId_sizeId"
 const getProductAndSize = (key) => {
@@ -21,19 +21,19 @@ const getProductAndSize = (key) => {
 };
 
 const ProductItem = ({ product, quantities, updateQuantity, onImageClick, stockMap }) => {
-    // Default to Large size if available, otherwise first size
-    const [activeSizeId, setActiveSizeId] = useState(() => {
+    // Helper function to find the best available size
+    const findBestAvailableSize = (currentStockMap) => {
         // First try to find Large size
         const largeSize = product.sizes?.find(s => s.name === 'Large' || s.id === 'lrg');
         if (largeSize) {
             // If stock data is loaded and Large is out of stock, find alternative
-            if (stockMap && stockMap.size > 0 && largeSize.sku) {
-                const largeStock = getStockLevel(stockMap, largeSize.sku);
+            if (currentStockMap && currentStockMap.size > 0 && largeSize.sku) {
+                const largeStock = getStockLevel(currentStockMap, largeSize.sku);
                 if (largeStock <= 0) {
                     // Large is out of stock, find first available
                     const availableSize = product.sizes?.find(s => {
                         if (!s.sku) return true;
-                        return getStockLevel(stockMap, s.sku) > 0;
+                        return getStockLevel(currentStockMap, s.sku) > 0;
                     });
                     return availableSize ? availableSize.id : largeSize.id;
                 }
@@ -44,7 +44,32 @@ const ProductItem = ({ product, quantities, updateQuantity, onImageClick, stockM
 
         // No Large size exists, fall back to first size
         return product.sizes?.[0]?.id || 'lrg';
-    });
+    };
+
+    // Default to Large size if available, otherwise first size
+    const [activeSizeId, setActiveSizeId] = useState(() => findBestAvailableSize(stockMap));
+
+    // Re-evaluate active size when stockMap loads or changes
+    // This handles the case where stockMap was empty on initial render
+    useEffect(() => {
+        if (stockMap && stockMap.size > 0) {
+            const activeSize = product.sizes?.find(s => s.id === activeSizeId);
+            // Only switch if current size is out of stock AND user hasn't added any to cart
+            if (activeSize?.sku) {
+                const currentStock = getStockLevel(stockMap, activeSize.sku);
+                const quantityKey = `${product.id}_${activeSizeId}`;
+                const hasQuantityInCart = (quantities[quantityKey] || 0) > 0;
+
+                if (currentStock <= 0 && !hasQuantityInCart) {
+                    // Current size is out of stock, switch to best available
+                    const bestSize = findBestAvailableSize(stockMap);
+                    if (bestSize !== activeSizeId) {
+                        setActiveSizeId(bestSize);
+                    }
+                }
+            }
+        }
+    }, [stockMap, product.id, product.sizes, activeSizeId, quantities]);
 
     const activeSize = product.sizes?.find(s => s.id === activeSizeId);
     const quantityKey = `${product.id}_${activeSizeId}`;
@@ -238,24 +263,70 @@ const Order = () => {
     const [orderCode, setOrderCode] = useState(null);
     const [addressValid, setAddressValid] = useState(true);
 
+    // Effect to handle URL parameters - needs stockMap to be loaded first for smart size selection
+    const [urlParamsProcessed, setUrlParamsProcessed] = useState(false);
+
     useEffect(() => {
-        // Handle product URL parameter
+        // Only process URL params once stockMap is loaded (or if no product param)
+        if (urlParamsProcessed) return;
+
+        // Handle product URL parameter - wait for stock data
         if (initialProductId) {
+            // Wait for stockMap to load before selecting size
+            if (stockMap.size === 0) return; // Stock not loaded yet
+
             const product = products.find(p => p.id === initialProductId);
             if (product && product.sizes?.length > 0) {
-                // Select first size by default
-                const defaultSizeId = product.sizes[0].id;
-                setQuantities(prev => ({ ...prev, [`${initialProductId}_${defaultSizeId}`]: 1 }));
+                // Smart size selection: prefer Large if in stock, otherwise first available
+                let defaultSizeId = product.sizes[0].id;
+
+                // Try to find Large size first
+                const largeSize = product.sizes.find(s => s.name === 'Large' || s.id === 'lrg');
+                if (largeSize) {
+                    const largeStock = getStockLevel(stockMap, largeSize.sku);
+                    if (largeStock > 0) {
+                        defaultSizeId = largeSize.id;
+                    } else {
+                        // Large is out of stock, find first available size
+                        const availableSize = product.sizes.find(s => {
+                            if (!s.sku) return true;
+                            return getStockLevel(stockMap, s.sku) > 0;
+                        });
+                        if (availableSize) {
+                            defaultSizeId = availableSize.id;
+                        }
+                    }
+                } else {
+                    // No Large size, find first available
+                    const availableSize = product.sizes.find(s => {
+                        if (!s.sku) return true;
+                        return getStockLevel(stockMap, s.sku) > 0;
+                    });
+                    if (availableSize) {
+                        defaultSizeId = availableSize.id;
+                    }
+                }
+
+                // Only add if the selected size has stock
+                const selectedSize = product.sizes.find(s => s.id === defaultSizeId);
+                const selectedStock = selectedSize?.sku ? getStockLevel(stockMap, selectedSize.sku) : 0;
+                if (selectedStock > 0) {
+                    setQuantities(prev => ({ ...prev, [`${initialProductId}_${defaultSizeId}`]: 1 }));
+                }
             }
+            setUrlParamsProcessed(true);
+        } else {
+            // No product param, just mark as processed
+            setUrlParamsProcessed(true);
         }
 
         // Handle bundle URL parameter
-        if (initialBundle === 'full-collection') {
+        if (initialBundle === 'full-collection' && isBundleAvailable(stockMap, getStockLevel)) {
             setQuantities(prev => ({ ...prev, 'full-collection-bundle_bundle': 1 }));
         }
 
         window.scrollTo(0, 0);
-    }, [initialProductId, initialBundle]);
+    }, [initialProductId, initialBundle, stockMap, urlParamsProcessed]);
 
     const updateQuantity = (productId, sizeId, delta) => {
         const key = `${productId}_${sizeId}`;
@@ -633,47 +704,61 @@ const Order = () => {
                                             </p>
 
                                             {/* Quantity Controls or Sold Out */}
-                                            {bundleInStock ? (
-                                                <div className="flex items-center gap-4">
-                                                    <div className="flex items-center bg-amber-50 rounded-lg border border-amber-200">
-                                                        <button
-                                                            onClick={() => {
-                                                                const key = 'full-collection-bundle_bundle';
-                                                                setQuantities(prev => {
-                                                                    const current = prev[key] || 0;
-                                                                    const next = Math.max(0, current - 1);
-                                                                    const newQuantities = { ...prev, [key]: next };
-                                                                    if (next === 0) delete newQuantities[key];
-                                                                    return newQuantities;
-                                                                });
-                                                            }}
-                                                            className="p-2 hover:bg-amber-100 text-amber-700 rounded-l-lg transition-colors"
-                                                        >
-                                                            <Minus size={16} />
-                                                        </button>
-                                                        <span className="w-8 text-center font-bold text-gray-900">
-                                                            {quantities['full-collection-bundle_bundle'] || 0}
-                                                        </span>
-                                                        <button
-                                                            onClick={() => {
-                                                                const key = 'full-collection-bundle_bundle';
-                                                                setQuantities(prev => ({
-                                                                    ...prev,
-                                                                    [key]: (prev[key] || 0) + 1
-                                                                }));
-                                                            }}
-                                                            className="p-2 hover:bg-amber-100 text-amber-700 rounded-r-lg transition-colors"
-                                                        >
-                                                            <Plus size={16} />
-                                                        </button>
+                                            {bundleInStock ? (() => {
+                                                const maxBundles = getMaxBundleQuantity(stockMap, getStockLevel);
+                                                const currentBundleQty = quantities['full-collection-bundle_bundle'] || 0;
+                                                const isAtMax = currentBundleQty >= maxBundles;
+
+                                                return (
+                                                    <div className="flex flex-col gap-2">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="flex items-center bg-amber-50 rounded-lg border border-amber-200">
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const key = 'full-collection-bundle_bundle';
+                                                                        setQuantities(prev => {
+                                                                            const current = prev[key] || 0;
+                                                                            const next = Math.max(0, current - 1);
+                                                                            const newQuantities = { ...prev, [key]: next };
+                                                                            if (next === 0) delete newQuantities[key];
+                                                                            return newQuantities;
+                                                                        });
+                                                                    }}
+                                                                    className="p-2 hover:bg-amber-100 text-amber-700 rounded-l-lg transition-colors"
+                                                                >
+                                                                    <Minus size={16} />
+                                                                </button>
+                                                                <span className="w-8 text-center font-bold text-gray-900">
+                                                                    {currentBundleQty}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const key = 'full-collection-bundle_bundle';
+                                                                        setQuantities(prev => ({
+                                                                            ...prev,
+                                                                            [key]: (prev[key] || 0) + 1
+                                                                        }));
+                                                                    }}
+                                                                    disabled={isAtMax}
+                                                                    className={`p-2 rounded-r-lg transition-colors ${isAtMax ? 'text-amber-300 cursor-not-allowed' : 'hover:bg-amber-100 text-amber-700'}`}
+                                                                >
+                                                                    <Plus size={16} />
+                                                                </button>
+                                                            </div>
+                                                            {currentBundleQty > 0 && (
+                                                                <span className="text-sm text-amber-600 font-medium">
+                                                                    Added to cart!
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {maxBundles > 0 && maxBundles <= 10 && (
+                                                            <span className="text-[10px] uppercase tracking-wide text-orange-500 font-bold animate-pulse">
+                                                                Only {maxBundles} bundle{maxBundles !== 1 ? 's' : ''} available!
+                                                            </span>
+                                                        )}
                                                     </div>
-                                                    {quantities['full-collection-bundle_bundle'] > 0 && (
-                                                        <span className="text-sm text-amber-600 font-medium">
-                                                            Added to cart!
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            ) : (
+                                                );
+                                            })() : (
                                                 <div className="bg-gray-100 text-gray-500 text-sm font-bold px-4 py-2 rounded-lg inline-block">
                                                     Currently Unavailable
                                                 </div>
