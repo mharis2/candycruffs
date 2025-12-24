@@ -215,7 +215,7 @@ const FlavorCard = ({ product, index, stockMap }) => {
                                 )}
                                 {hasEligibleSize && DEALS.mixAndMatch.active && (
                                     <span className="text-[9px] font-bold text-amber-600 mt-1 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                                        3-for-$27 Deal
+                                        3 for $27
                                     </span>
                                 )}
                             </div>

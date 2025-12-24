@@ -12,7 +12,7 @@ export const DEALS = {
         originalPrice: 50,
         salePrice: 45,
         savings: 5,
-        image: '/assets/collection-bundle.png',
+        image: '/assets/collection-bundle.webp',
         includedProducts: [
             'shark-bite-crunch',
             'neon-worm-crisps',
@@ -46,8 +46,8 @@ export const DEALS = {
     mixAndMatch: {
         id: 'mix-match-3-for-27',
         name: 'Stock Up & Save',
-        tagline: '3 Large Bags for $27',
-        description: 'Any 3 Large size bags for just $27. Discount applies automatically at checkout.',
+        tagline: '3 for $27',
+        description: 'Select any 3 Large bags or Prism Pops ($10 items) and save $3 automatically!',
         regularPricePerItem: 10,
         dealPriceFor3: 27,
         savingsPerSet: 3,

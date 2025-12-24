@@ -145,10 +145,11 @@ const Admin = () => {
 
     const fetchOrders = async () => {
         setLoading(true);
+        // Fetch ALL orders that are NOT paid/fulfilled - admins need to see cancelled/expired to manually manage
         const { data, error } = await supabase
             .from('orders')
             .select('*')
-            .eq('status', 'pending_payment')
+            .not('status', 'in', '("paid","fulfilled")')
             .order('created_at', { ascending: false });
 
         if (error) console.error('Error fetching orders:', error);
@@ -411,62 +412,73 @@ const Admin = () => {
                             </div>
                         )}
 
-                        {orders.map(order => (
-                            <div key={order.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col lg:flex-row gap-6 relative overflow-hidden group">
-                                <div className="absolute top-0 left-0 w-1 h-full bg-yellow-400" />
+                        {orders.map(order => {
+                            const isCancelled = order.status === 'cancelled' || order.status === 'expired';
+                            const statusColor = isCancelled ? 'bg-red-400' : 'bg-yellow-400';
+                            const statusBadge = isCancelled
+                                ? <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold uppercase">{order.status}</span>
+                                : <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold uppercase">Awaiting Payment</span>;
 
-                                <div className="flex-grow">
-                                    <div className="flex flex-wrap justify-between items-start mb-4 gap-2">
-                                        <div>
-                                            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                                {order.customer_name || 'Customer'}
-                                            </h3>
-                                            <p className="text-sm text-gray-600 font-medium">{order.customer_phone}</p>
-                                            <p className="text-xs text-gray-400 font-mono mt-0.5">{order.customer_email}</p>
-                                            <p className="text-xs text-gray-400 font-mono mt-1">ID: {order.id}</p>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <span className="font-mono bg-gray-100 px-3 py-1 rounded text-sm font-bold text-gray-700">
-                                                {order.order_code}
-                                            </span>
-                                            <span className="bg-green-100 text-green-700 px-3 py-1 rounded text-sm font-bold">
-                                                ${order.total}
-                                            </span>
-                                        </div>
-                                    </div>
+                            return (
+                                <div key={order.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col lg:flex-row gap-6 relative overflow-hidden group">
+                                    <div className={`absolute top-0 left-0 w-1 h-full ${statusColor}`} />
 
-                                    <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-                                        {order.items && order.items.map((item, idx) => (
-                                            <div key={idx} className="flex justify-between text-sm items-center">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-bold text-gray-700">{item.quantity}x</span>
-                                                    <span>{item.name || item.sku}</span>
-                                                </div>
-                                                <span className="text-gray-400 text-xs font-mono">{item.sku}</span>
+                                    <div className="flex-grow">
+                                        <div className="flex flex-wrap justify-between items-start mb-4 gap-2">
+                                            <div>
+                                                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                                    {order.customer_name || 'Customer'}
+                                                </h3>
+                                                <p className="text-sm text-gray-600 font-medium">{order.customer_phone}</p>
+                                                <p className="text-xs text-gray-400 font-mono mt-0.5">{order.customer_email}</p>
+                                                <p className="text-xs text-gray-400 font-mono mt-1">ID: {order.id}</p>
                                             </div>
-                                        ))}
-                                    </div>
-                                    <p className="text-xs text-gray-400 mt-3">
-                                        Ordered: {new Date(order.created_at).toLocaleString()}
-                                    </p>
-                                </div>
+                                            <div className="flex flex-col items-end gap-2">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="font-mono bg-gray-100 px-3 py-1 rounded text-sm font-bold text-gray-700">
+                                                        {order.order_code}
+                                                    </span>
+                                                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded text-sm font-bold">
+                                                        ${order.total}
+                                                    </span>
+                                                </div>
+                                                {statusBadge}
+                                            </div>
+                                        </div>
 
-                                <div className="flex flex-row lg:flex-col gap-3 min-w-[180px] border-t lg:border-t-0 lg:border-l border-gray-100 pt-4 lg:pt-0 lg:pl-6">
-                                    <button
-                                        onClick={() => confirmPaid(order)}
-                                        className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition-colors text-sm flex items-center justify-center gap-2"
-                                    >
-                                        <CheckCircle size={16} /> Mark Paid
-                                    </button>
-                                    <button
-                                        onClick={() => releaseStock(order)}
-                                        className="flex-1 bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-3 px-4 rounded-xl transition-colors text-sm flex items-center justify-center gap-2"
-                                    >
-                                        <Archive size={16} /> Cancel Order
-                                    </button>
+                                        <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                                            {order.items && order.items.map((item, idx) => (
+                                                <div key={idx} className="flex justify-between text-sm items-center">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-bold text-gray-700">{item.quantity}x</span>
+                                                        <span>{item.name || item.sku}</span>
+                                                    </div>
+                                                    <span className="text-gray-400 text-xs font-mono">{item.sku}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <p className="text-xs text-gray-400 mt-3">
+                                            Ordered: {new Date(order.created_at).toLocaleString()}
+                                        </p>
+                                    </div>
+
+                                    <div className="flex flex-row lg:flex-col gap-3 min-w-[180px] border-t lg:border-t-0 lg:border-l border-gray-100 pt-4 lg:pt-0 lg:pl-6">
+                                        <button
+                                            onClick={() => confirmPaid(order)}
+                                            className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition-colors text-sm flex items-center justify-center gap-2"
+                                        >
+                                            <CheckCircle size={16} /> Mark Paid
+                                        </button>
+                                        <button
+                                            onClick={() => releaseStock(order)}
+                                            className="flex-1 bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-3 px-4 rounded-xl transition-colors text-sm flex items-center justify-center gap-2"
+                                        >
+                                            <Archive size={16} /> Cancel Order
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
                 )}
 

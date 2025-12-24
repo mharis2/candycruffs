@@ -184,7 +184,7 @@ const ProductItem = ({ product, quantities, updateQuantity, onImageClick, stockM
                                         {isOOS ? (
                                             <span className="text-[9px] uppercase tracking-wide text-red-500 font-extrabold">(Sold Out)</span>
                                         ) : (
-                                            stock > 0 && stock <= 15 && (
+                                            stock > 0 && stock <= 10 && (
                                                 <span className="text-[9px] uppercase tracking-wide text-orange-500 font-bold ml-1 animate-pulse">
                                                     Only {stock} left!
                                                 </span>
@@ -775,9 +775,9 @@ const Order = () => {
                                 <div className="bg-emerald-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0">3</div>
                                 <div>
                                     <p className="text-emerald-800 font-medium text-sm">
-                                        <span className="font-bold">3-for-$27 Deal:</span> Select any 3 Large bags and save $3 automatically!
+                                        <span className="font-bold">3-for-$27 Deal:</span> Any 3 Large bags or Prism Pops ($10 items) — save $3 automatically!
                                     </p>
-                                    <p className="text-emerald-600 text-xs">Stacks with multiple sets • {eligibleCount > 0 ? `${eligibleCount} eligible item(s) selected` : 'Add Large bags below'}</p>
+                                    <p className="text-emerald-600 text-xs">Stacks with multiple sets • {eligibleCount > 0 ? `${eligibleCount} eligible item(s) selected` : 'Add $10 bags below'}</p>
                                 </div>
                             </div>
                         )}
