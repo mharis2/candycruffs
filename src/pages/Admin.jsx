@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../utils/supabaseClient';
 import Button from '../components/ui/Button';
-import { Package, ShoppingBag, Plus, Minus, RefreshCw, Archive, CheckCircle, AlertTriangle, BarChart3, TrendingUp, DollarSign, Users, Truck, MapPin } from 'lucide-react';
+import { Package, ShoppingBag, Plus, Minus, RefreshCw, Archive, CheckCircle, AlertTriangle, BarChart3, TrendingUp, DollarSign, Users, Truck, MapPin, Trash2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 import { products as productCatalog } from '../data/products';
 
@@ -204,20 +204,64 @@ const Admin = () => {
     };
 
     const confirmPaid = async (order) => {
-        if (!window.confirm(`Mark order ${order.order_code} as PAID?`)) return;
+        const wasCancelledOrExpired = order.status === 'cancelled' || order.status === 'expired';
 
-        // 1. Update status
+        let confirmMessage = `Mark order ${order.order_code} as PAID?`;
+        if (wasCancelledOrExpired) {
+            confirmMessage += `\n\nNote: This order was ${order.status}. Stock will be decremented again for the items.`;
+        }
+
+        if (!window.confirm(confirmMessage)) return;
+
+        // If order was cancelled/expired, we need to re-decrement stock
+        if (wasCancelledOrExpired && order.items) {
+            for (const item of order.items) {
+                // Skip bundle display items (they don't have real stock)
+                if (item.isBundleDisplay) continue;
+
+                const sku = item.sku;
+                const qty = parseInt(item.quantity) || 0;
+
+                if (sku && qty > 0) {
+                    // Get current stock
+                    const { data: product, error: fetchError } = await supabase
+                        .from('products')
+                        .select('stock_qty')
+                        .eq('sku', sku)
+                        .single();
+
+                    if (fetchError) {
+                        alert(`Error fetching stock for ${sku}: ${fetchError.message}`);
+                        return;
+                    }
+
+                    const newQty = Math.max(0, (product?.stock_qty || 0) - qty);
+
+                    const { error: updateError } = await supabase
+                        .from('products')
+                        .update({ stock_qty: newQty })
+                        .eq('sku', sku);
+
+                    if (updateError) {
+                        alert(`Error updating stock for ${sku}: ${updateError.message}`);
+                        return;
+                    }
+                }
+            }
+        }
+
+        // Update status to paid
         const { error } = await supabase.from('orders').update({ status: 'paid' }).eq('id', order.id);
 
         if (error) {
             alert('Error updating: ' + error.message);
         } else {
-            // 2. Send Email
+            // Send Email
             await sendEmailTrigger('paid', {
                 email: order.customer_email,
                 name: order.customer_name || 'Customer',
                 orderCode: order.order_code,
-                deliveryType: order.delivery_type // Pass delivery type to email
+                deliveryType: order.delivery_type
             });
             fetchOrders();
         }
@@ -261,14 +305,35 @@ const Admin = () => {
         }
     };
 
-    const deleteOrder = async (orderId) => {
+    const deleteOrder = async (orderId, onSuccess = fetchFulfillment) => {
         if (!window.confirm("Are you sure you want to PERMANENTLY delete this order? This cannot be undone.")) return;
 
         const { error } = await supabase.from('orders').delete().eq('id', orderId);
         if (error) {
             alert("Error deleting: " + error.message);
         } else {
-            fetchFulfillment();
+            onSuccess();
+        }
+    };
+
+    // Delete order from pending tab - sends cancellation email first
+    const deleteOrderWithEmail = async (order) => {
+        if (!window.confirm(`Delete order ${order.order_code} and notify customer? This cannot be undone.`)) return;
+
+        // Send cancellation email first
+        await sendEmailTrigger('cancelled', {
+            email: order.customer_email,
+            name: order.customer_name || 'Customer',
+            orderCode: order.order_code,
+            reason: 'Order has been removed from our system.'
+        });
+
+        // Then delete the order
+        const { error } = await supabase.from('orders').delete().eq('id', order.id);
+        if (error) {
+            alert("Error deleting: " + error.message);
+        } else {
+            fetchOrders();
         }
     };
 
@@ -469,12 +534,22 @@ const Admin = () => {
                                         >
                                             <CheckCircle size={16} /> Mark Paid
                                         </button>
-                                        <button
-                                            onClick={() => releaseStock(order)}
-                                            className="flex-1 bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-3 px-4 rounded-xl transition-colors text-sm flex items-center justify-center gap-2"
-                                        >
-                                            <Archive size={16} /> Cancel Order
-                                        </button>
+                                        {/* Show Cancel for pending_payment (releases stock), Delete for already cancelled/expired */}
+                                        {order.status === 'pending_payment' ? (
+                                            <button
+                                                onClick={() => releaseStock(order)}
+                                                className="flex-1 bg-white border border-red-200 text-red-500 hover:bg-red-50 font-bold py-3 px-4 rounded-xl transition-colors text-sm flex items-center justify-center gap-2"
+                                            >
+                                                <Archive size={16} /> Cancel Order
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => deleteOrderWithEmail(order)}
+                                                className="flex-1 bg-white border border-gray-300 text-gray-500 hover:bg-gray-50 font-bold py-3 px-4 rounded-xl transition-colors text-sm flex items-center justify-center gap-2"
+                                            >
+                                                <Trash2 size={16} /> Delete
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             )
