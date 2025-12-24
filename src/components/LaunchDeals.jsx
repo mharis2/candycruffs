@@ -130,7 +130,7 @@ const LaunchDeals = ({ stockMap }) => {
                                 </div>
 
                                 {/* Image */}
-                                <div className={`relative h-36 mb-4 flex items-center justify-center ${!bundleInStock && 'grayscale opacity-60'}`}>
+                                <div className={`relative h-64 mb-4 flex items-center justify-center ${!bundleInStock && 'grayscale opacity-60'}`}>
                                     <motion.img
                                         src={collectionBundle.image}
                                         alt={collectionBundle.name}

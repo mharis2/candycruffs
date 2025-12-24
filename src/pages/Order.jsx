@@ -674,11 +674,22 @@ const Order = () => {
 
                                     <div className="flex flex-col sm:flex-row gap-4">
                                         {/* Image */}
-                                        <div className={`w-full sm:w-32 h-48 sm:h-32 bg-gradient-to-br from-amber-100/50 to-orange-100/50 rounded-xl flex items-center justify-center shrink-0 relative overflow-hidden ${!bundleInStock && 'grayscale opacity-60'}`}>
+                                        <div className={`w-full sm:w-40 h-56 sm:h-40 bg-gradient-to-br from-amber-100/50 to-orange-100/50 rounded-xl flex items-center justify-center shrink-0 relative overflow-hidden group cursor-pointer ${!bundleInStock && 'grayscale opacity-60'}`}>
                                             <img
                                                 src={DEALS.collectionBundle.image}
                                                 alt={DEALS.collectionBundle.name}
                                                 className="w-full h-full object-contain p-2"
+                                            />
+                                            {/* Zoom Hint Overlay */}
+                                            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+                                                <div className="bg-white/90 rounded-full p-1.5 shadow-sm text-gray-600 scale-75 group-hover:scale-100 transition-transform duration-300">
+                                                    <ZoomIn size={16} />
+                                                </div>
+                                            </div>
+                                            {/* Click Handler Overlay */}
+                                            <div
+                                                className="absolute inset-0 z-10"
+                                                onClick={() => setSelectedImage(DEALS.collectionBundle.image)}
                                             />
                                         </div>
 
