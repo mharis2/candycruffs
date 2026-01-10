@@ -45,7 +45,7 @@ export const products = [
         description: 'Soft gummy bears transformed into airy, jewel-like bites with a light, shattery crunch in every color.',
         image: '/assets/crystal-bear-bites.webp',
         sizeComparisonImage: '/assets/crystal-bear-bites-sizes.webp',
-        badges: ['HALAL', 'FRUITY', 'CRUNCHY'],
+        badges: ['LIMITED EDITION', 'HALAL', 'FRUITY', 'CRUNCHY'],
         sizes: [
             { id: 'reg', name: 'Regular', weight: '50g', price: 8, sku: 'CRYSTAL-BEAR-BITES-REG' },
             { id: 'lrg', name: 'Large', weight: '120g', price: 10, sku: 'CRYSTAL-BEAR-BITES-LRG' }
@@ -64,6 +64,19 @@ export const products = [
         sizes: [
             { id: 'reg', name: 'Regular', weight: '50g', price: 8, sku: 'COLA-FIZZ-CRUNCH-REG' },
             { id: 'lrg', name: 'Large', weight: '120g', price: 10, sku: 'COLA-FIZZ-CRUNCH-LRG' }
+        ]
+    },
+    {
+        id: 'strawberry-sparkle-crunch',
+        name: 'Strawberry Sparkle Crunch',
+        tagline: 'Sweet strawberry gummies with a sparkly crunch.',
+        description: 'Juicy strawberry gummies freeze dried into airy, melt-in-your-mouth bites with a light, sweet crunch.',
+        image: '/assets/strawberry-sparkle-crunch.webp',
+        sizeComparisonImage: '/assets/strawberry-sparkle-crunch-sizes.webp',
+        badges: ['LIMITED EDITION', 'HALAL', 'FRUITY', 'BERRY'],
+        sizes: [
+            { id: 'reg', name: 'Regular', weight: '50g', price: 8, sku: 'STRAWBERRY-SPARKLE-CRUNCH-REG' },
+            { id: 'lrg', name: 'Large', weight: '120g', price: 10, sku: 'STRAWBERRY-SPARKLE-CRUNCH-LRG' }
         ]
     }
 ];
