@@ -10,7 +10,8 @@ import ProductImageModal from '../components/ui/ProductImageModal';
 import { fetchStockData, getStockLevel, subscribeToStockUpdates } from '../utils/inventoryService';
 import { supabase } from '../utils/supabaseClient';
 import { generateOrderCode } from '../utils/orderUtils';
-import { DEALS, calculateMixMatchDiscount, isEligibleForMixMatch, isBundleAvailable, getMaxBundleQuantity } from '../data/deals';
+import { DEALS, calculateMixMatchDiscount, calculateRegularDiscount, isEligibleForMixMatch, isEligibleForRegularDeal, isBundleAvailable, getBundleOrderItems, getBundleSelectionTotal } from '../data/deals';
+import BundleCustomizer from '../components/BundleCustomizer';
 
 // Helper: Get product and size from a unique key "productId_sizeId"
 const getProductAndSize = (key) => {
@@ -165,6 +166,7 @@ const ProductItem = ({ product, quantities, updateQuantity, onImageClick, stockM
                                 const stock = size.sku ? getStockLevel(stockMap, size.sku) : 0;
                                 const isOOS = stock <= 0;
                                 const isLarge = size.name === 'Large' || size.id === 'lrg';
+                                const isRegular = size.name === 'Regular' || size.id === 'reg';
 
                                 return (
                                     <button
@@ -175,11 +177,15 @@ const ProductItem = ({ product, quantities, updateQuantity, onImageClick, stockM
                                         ${activeSizeId === size.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}
                                         ${isOOS ? 'opacity-50 cursor-not-allowed bg-gray-200/50' : ''}
                                         ${isLarge && DEALS.mixAndMatch.active ? 'ring-1 ring-amber-300' : ''}
+                                        ${isRegular && DEALS.regularDeal.active ? 'ring-1 ring-blue-300' : ''}
                                     `}
                                     >
                                         {size.name}
                                         {isLarge && DEALS.mixAndMatch.active && (
                                             <span className="text-[8px] uppercase tracking-wide text-amber-600 font-bold">Deal</span>
+                                        )}
+                                        {isRegular && DEALS.regularDeal.active && (
+                                            <span className="text-[8px] uppercase tracking-wide text-blue-600 font-bold">Deal</span>
                                         )}
                                         {isOOS ? (
                                             <span className="text-[9px] uppercase tracking-wide text-red-500 font-extrabold">(Sold Out)</span>
@@ -231,9 +237,13 @@ const Order = () => {
     const [searchParams] = useSearchParams();
     const initialProductId = searchParams.get('product');
     const initialBundle = searchParams.get('bundle');
+    const initialSelections = searchParams.get('selections');
 
     // State tracks quantities by "productId_sizeId" keys
     const [quantities, setQuantities] = useState({});
+    // Custom bundle selections: { [sku]: quantity }
+    const [bundleSelections, setBundleSelections] = useState({});
+    const [bundleAdded, setBundleAdded] = useState(false);
     const [stockMap, setStockMap] = useState(new Map());
 
     useEffect(() => {
@@ -320,9 +330,18 @@ const Order = () => {
             setUrlParamsProcessed(true);
         }
 
-        // Handle bundle URL parameter
-        if (initialBundle === 'full-collection' && isBundleAvailable(stockMap, getStockLevel)) {
-            setQuantities(prev => ({ ...prev, 'full-collection-bundle_bundle': 1 }));
+        // Handle custom bundle URL parameter from LaunchDeals
+        if (initialBundle === 'custom' && initialSelections) {
+            try {
+                const parsed = JSON.parse(decodeURIComponent(initialSelections));
+                const total = getBundleSelectionTotal(parsed);
+                if (total === DEALS.collectionBundle.maxItems) {
+                    setBundleSelections(parsed);
+                    setBundleAdded(true);
+                }
+            } catch (e) {
+                console.error('Failed to parse bundle selections:', e);
+            }
         }
 
         window.scrollTo(0, 0);
@@ -346,24 +365,26 @@ const Order = () => {
 
         Object.keys(quantities).forEach(key => {
             const count = quantities[key];
-
-            // Handle bundle separately
-            if (key === 'full-collection-bundle_bundle') {
-                bundleTotal += DEALS.collectionBundle.salePrice * count;
-                return;
-            }
-
             const { size } = getProductAndSize(key);
             if (size) {
                 subtotal += size.price * count;
             }
         });
 
-        // Calculate Mix & Match discount
+        // Add custom bundle total if bundle is added
+        if (bundleAdded && getBundleSelectionTotal(bundleSelections) === DEALS.collectionBundle.maxItems) {
+            bundleTotal = DEALS.collectionBundle.salePrice;
+        }
+
+        // Calculate Mix & Match discount (Large bags / $10 items)
         const { savings: mixMatchSavings, dealSets, eligibleCount } = calculateMixMatchDiscount(quantities, getProductAndSize);
 
-        // Apply discount to subtotal
-        const discountedSubtotal = subtotal - mixMatchSavings;
+        // Calculate Regular deal discount (Regular bags / $8 items)
+        const { savings: regularSavings, dealSets: regularDealSets, eligibleCount: regularEligibleCount } = calculateRegularDiscount(quantities, getProductAndSize);
+
+        // Apply both discounts to subtotal (stackable)
+        const totalSavings = mixMatchSavings + regularSavings;
+        const discountedSubtotal = subtotal - totalSavings;
         const totalBeforeDelivery = discountedSubtotal + bundleTotal;
 
         // Delivery fee calculation - FREE if total order (including bundles) >= $70
@@ -375,15 +396,19 @@ const Order = () => {
         return {
             subtotal: subtotal + bundleTotal,
             mixMatchSavings,
+            regularSavings,
+            totalSavings,
             dealSets,
+            regularDealSets,
             eligibleCount,
+            regularEligibleCount,
             bundleTotal,
             deliveryFee,
             total: totalBeforeDelivery + deliveryFee
         };
     };
 
-    const { subtotal, mixMatchSavings, dealSets, eligibleCount, bundleTotal, deliveryFee, total } = calculateTotal();
+    const { subtotal, mixMatchSavings, regularSavings, totalSavings, dealSets, regularDealSets, eligibleCount, regularEligibleCount, bundleTotal, deliveryFee, total } = calculateTotal();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -408,41 +433,30 @@ const Order = () => {
         // Prepare order items
         const orderItems = [];
 
+        // Add custom bundle items if bundle is in cart
+        if (bundleAdded && getBundleSelectionTotal(bundleSelections) === DEALS.collectionBundle.maxItems) {
+            // Add individual component items from custom selections
+            const bundleItems = getBundleOrderItems(bundleSelections);
+            bundleItems.forEach(item => orderItems.push(item));
+
+            // Add a bundle display indicator (for admin/display - not for stock)
+            orderItems.push({
+                id: DEALS.collectionBundle.id,
+                sku: DEALS.collectionBundle.sku,
+                name: '📦 THE CRUNCH JACKPOT',
+                size: 'Bundle',
+                weight: null,
+                price: DEALS.collectionBundle.salePrice,
+                quantity: 1,
+                image: DEALS.collectionBundle.image,
+                isBundle: true,
+                isBundleDisplay: true
+            });
+        }
+
         Object.keys(quantities).forEach(key => {
             const count = quantities[key];
             if (count === 0) return;
-
-            // Handle bundle item - create individual items for each component product
-            if (key === 'full-collection-bundle_bundle') {
-                // Add individual component items with proper names (for both display AND stock decrement)
-                // These use the includedItems array which has SKU and name
-                DEALS.collectionBundle.includedItems.forEach(item => {
-                    orderItems.push({
-                        sku: item.sku,
-                        name: item.name,
-                        quantity: count,
-                        price: 10, // Each Large bag is $10
-                        isBundle: true,
-                        isBundleComponent: true,
-                        bundleParent: DEALS.collectionBundle.sku
-                    });
-                });
-
-                // Add a bundle indicator item at the end (for admin/display - not for stock)
-                orderItems.push({
-                    id: DEALS.collectionBundle.id,
-                    sku: DEALS.collectionBundle.sku,
-                    name: '📦 FULL COLLECTION BUNDLE',
-                    size: 'Bundle',
-                    weight: null,
-                    price: DEALS.collectionBundle.salePrice,
-                    quantity: count,
-                    image: DEALS.collectionBundle.image,
-                    isBundle: true,
-                    isBundleDisplay: true // Flag for display purposes - not for stock
-                });
-                return;
-            }
 
             const { product, size } = getProductAndSize(key);
             if (!product || !size) return;
@@ -639,7 +653,7 @@ const Order = () => {
                     <div className="lg:col-span-2 space-y-6">
                         <h2 className="text-2xl font-display font-bold text-gray-900 mb-6">Select Your Treats</h2>
 
-                        {/* Bundle Card - Launch Week Deal */}
+                        {/* Bundle Card - Customizable Jackpot Deal */}
                         {DEALS.collectionBundle.active && (() => {
                             const bundleInStock = isBundleAvailable(stockMap, getStockLevel);
 
@@ -647,22 +661,22 @@ const Order = () => {
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className={`bg-gradient-to-br from-amber-50 via-white to-orange-50 p-4 sm:p-6 rounded-2xl shadow-lg border-2 transition-all ${!bundleInStock
+                                    className={`bg-gradient-to-br from-purple-50 via-white to-pink-50 p-4 sm:p-6 rounded-2xl shadow-lg border-2 transition-all ${!bundleInStock
                                         ? 'border-gray-300 opacity-75'
-                                        : quantities['full-collection-bundle_bundle'] > 0
-                                            ? 'border-amber-400 ring-2 ring-amber-400/50 shadow-amber-100'
-                                            : 'border-amber-200/70'
+                                        : bundleAdded
+                                            ? 'border-purple-400 ring-2 ring-purple-400/50 shadow-purple-100'
+                                            : 'border-purple-200/70'
                                         }`}
                                 >
                                     {/* Deal Badge */}
                                     <div className="flex items-center gap-2 mb-4">
                                         {bundleInStock ? (
                                             <>
-                                                <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
+                                                <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
                                                     <Sparkles size={12} />
-                                                    LAUNCH WEEK DEAL
+                                                    LIMITED TIME DEAL
                                                 </span>
-                                                <span className="text-amber-600 text-xs font-bold">Save ${DEALS.collectionBundle.savings}!</span>
+                                                <span className="text-purple-600 text-xs font-bold">Save ${DEALS.collectionBundle.savings}!</span>
                                             </>
                                         ) : (
                                             <span className="bg-gray-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
@@ -674,7 +688,7 @@ const Order = () => {
 
                                     <div className="flex flex-col sm:flex-row gap-4">
                                         {/* Image */}
-                                        <div className={`w-full sm:w-40 h-56 sm:h-40 bg-gradient-to-br from-amber-100/50 to-orange-100/50 rounded-xl flex items-center justify-center shrink-0 relative overflow-hidden group cursor-pointer ${!bundleInStock && 'grayscale opacity-60'}`}>
+                                        <div className={`w-full sm:w-40 h-56 sm:h-40 bg-gradient-to-br from-purple-100/50 to-pink-100/50 rounded-xl flex items-center justify-center shrink-0 relative overflow-hidden group cursor-pointer ${!bundleInStock && 'grayscale opacity-60'}`}>
                                             <img
                                                 src={DEALS.collectionBundle.image}
                                                 alt={DEALS.collectionBundle.name}
@@ -697,7 +711,7 @@ const Order = () => {
                                             <div className="flex flex-col sm:flex-row justify-between items-start mb-2 gap-2">
                                                 <div>
                                                     <div className="flex items-center gap-2 mb-1">
-                                                        <Package size={18} className={bundleInStock ? 'text-amber-500' : 'text-gray-400'} />
+                                                        <Package size={18} className={bundleInStock ? 'text-purple-500' : 'text-gray-400'} />
                                                         <h3 className="font-bold text-gray-900 text-lg">{DEALS.collectionBundle.name}</h3>
                                                     </div>
                                                     <p className="text-sm text-gray-500">{DEALS.collectionBundle.tagline}</p>
@@ -705,71 +719,29 @@ const Order = () => {
                                                 <div className="text-right">
                                                     <div className="flex items-center gap-2 justify-end">
                                                         <span className="text-gray-400 line-through text-sm">${DEALS.collectionBundle.originalPrice}</span>
-                                                        <span className={`font-bold text-2xl ${bundleInStock ? 'text-amber-600' : 'text-gray-500'}`}>${DEALS.collectionBundle.salePrice}</span>
+                                                        <span className={`font-bold text-2xl ${bundleInStock ? 'text-purple-600' : 'text-gray-500'}`}>${DEALS.collectionBundle.salePrice}</span>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <p className="text-xs text-gray-500 mb-4">
-                                                Includes: Shark Bite Crunch, Neon Worm Crisps, Crystal Bear Bites, Cola Fizz Crunch & Prism Pops
+                                                Pick any 6 Large bags (Prism Pops included) — customize your perfect bundle!
                                             </p>
 
-                                            {/* Quantity Controls or Sold Out */}
-                                            {bundleInStock ? (() => {
-                                                const maxBundles = getMaxBundleQuantity(stockMap, getStockLevel);
-                                                const currentBundleQty = quantities['full-collection-bundle_bundle'] || 0;
-                                                const isAtMax = currentBundleQty >= maxBundles;
-
-                                                return (
-                                                    <div className="flex flex-col gap-2">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="flex items-center bg-amber-50 rounded-lg border border-amber-200">
-                                                                <button
-                                                                    onClick={() => {
-                                                                        const key = 'full-collection-bundle_bundle';
-                                                                        setQuantities(prev => {
-                                                                            const current = prev[key] || 0;
-                                                                            const next = Math.max(0, current - 1);
-                                                                            const newQuantities = { ...prev, [key]: next };
-                                                                            if (next === 0) delete newQuantities[key];
-                                                                            return newQuantities;
-                                                                        });
-                                                                    }}
-                                                                    className="p-2 hover:bg-amber-100 text-amber-700 rounded-l-lg transition-colors"
-                                                                >
-                                                                    <Minus size={16} />
-                                                                </button>
-                                                                <span className="w-8 text-center font-bold text-gray-900">
-                                                                    {currentBundleQty}
-                                                                </span>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        const key = 'full-collection-bundle_bundle';
-                                                                        setQuantities(prev => ({
-                                                                            ...prev,
-                                                                            [key]: (prev[key] || 0) + 1
-                                                                        }));
-                                                                    }}
-                                                                    disabled={isAtMax}
-                                                                    className={`p-2 rounded-r-lg transition-colors ${isAtMax ? 'text-amber-300 cursor-not-allowed' : 'hover:bg-amber-100 text-amber-700'}`}
-                                                                >
-                                                                    <Plus size={16} />
-                                                                </button>
-                                                            </div>
-                                                            {currentBundleQty > 0 && (
-                                                                <span className="text-sm text-amber-600 font-medium">
-                                                                    Added to cart!
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        {maxBundles > 0 && maxBundles <= 10 && (
-                                                            <span className="text-[10px] uppercase tracking-wide text-orange-500 font-bold animate-pulse">
-                                                                Only {maxBundles} bundle{maxBundles !== 1 ? 's' : ''} available!
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })() : (
+                                            {/* BundleCustomizer replaces the old quantity controls */}
+                                            {bundleInStock ? (
+                                                <BundleCustomizer
+                                                    stockMap={stockMap}
+                                                    selections={bundleSelections}
+                                                    onSelectionsChange={setBundleSelections}
+                                                    onAddToCart={() => setBundleAdded(true)}
+                                                    isAdded={bundleAdded}
+                                                    onRemoveFromCart={() => {
+                                                        setBundleAdded(false);
+                                                        setBundleSelections({});
+                                                    }}
+                                                />
+                                            ) : (
                                                 <div className="bg-gray-100 text-gray-500 text-sm font-bold px-4 py-2 rounded-lg inline-block">
                                                     Currently Unavailable
                                                 </div>
@@ -780,18 +752,31 @@ const Order = () => {
                                 </motion.div>
                             );
                         })()}
-                        {/* Mix & Match Info Banner */}
-                        {DEALS.mixAndMatch.active && (
-                            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3">
-                                <div className="bg-emerald-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0">3</div>
-                                <div>
-                                    <p className="text-emerald-800 font-medium text-sm">
-                                        <span className="font-bold">3-for-$27 Deal:</span> Any 3 Large bags or Prism Pops ($10 items) — save $3 automatically!
-                                    </p>
-                                    <p className="text-emerald-600 text-xs">Stacks with multiple sets • {eligibleCount > 0 ? `${eligibleCount} eligible item(s) selected` : 'Add $10 bags below'}</p>
+                        {/* Deal Info Banners */}
+                        <div className="space-y-3">
+                            {DEALS.mixAndMatch.active && (
+                                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3">
+                                    <div className="bg-emerald-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0">3</div>
+                                    <div>
+                                        <p className="text-emerald-800 font-medium text-sm">
+                                            <span className="font-bold">3-for-$27 Deal:</span> Any 3 Large bags or Prism Pops ($10 items) — save $3 automatically!
+                                        </p>
+                                        <p className="text-emerald-600 text-xs">Stacks with multiple sets • {eligibleCount > 0 ? `${eligibleCount} eligible item(s) selected` : 'Add $10 bags below'}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                            {DEALS.regularDeal.active && (
+                                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
+                                    <div className="bg-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0">2</div>
+                                    <div>
+                                        <p className="text-blue-800 font-medium text-sm">
+                                            <span className="font-bold">2-for-$15 Deal:</span> Any 2 Regular bags ($8 items) — save $1 automatically!
+                                        </p>
+                                        <p className="text-blue-600 text-xs">Stacks with multiple sets • {regularEligibleCount > 0 ? `${regularEligibleCount} eligible item(s) selected` : 'Add Regular bags below'}</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
                         {
                             products.map(product => (
@@ -813,27 +798,34 @@ const Order = () => {
                             <h3 className="font-bold text-gray-900 mb-4 text-lg">Order Summary</h3>
 
                             <div className="space-y-3 mb-6">
+                                {/* Custom Bundle in summary */}
+                                {bundleAdded && getBundleSelectionTotal(bundleSelections) === DEALS.collectionBundle.maxItems && (
+                                    <div className="bg-purple-50/50 -mx-2 px-2 py-2 rounded-lg space-y-1">
+                                        <div className="flex justify-between text-sm items-start">
+                                            <span className="text-purple-800">
+                                                <span className="flex items-center gap-1.5 font-medium">
+                                                    <Package size={14} className="text-purple-500" />
+                                                    {DEALS.collectionBundle.name}
+                                                </span>
+                                            </span>
+                                            <span className="font-medium text-purple-800">${DEALS.collectionBundle.salePrice}</span>
+                                        </div>
+                                        {/* Show selected flavors */}
+                                        {DEALS.collectionBundle.eligibleProducts.map(product => {
+                                            const qty = bundleSelections[product.sku] || 0;
+                                            if (qty === 0) return null;
+                                            return (
+                                                <div key={product.sku} className="flex justify-between text-xs text-purple-600/70 pl-5">
+                                                    <span>{product.name} x{qty}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
                                 {Object.keys(quantities).map(key => {
                                     const count = quantities[key];
                                     if (count === 0) return null;
-
-                                    // Handle bundle item separately
-                                    if (key === 'full-collection-bundle_bundle') {
-                                        return (
-                                            <div key={key} className="flex justify-between text-sm items-start bg-amber-50/50 -mx-2 px-2 py-2 rounded-lg">
-                                                <span className="text-amber-800">
-                                                    <span className="flex items-center gap-1.5">
-                                                        <Package size={14} className="text-amber-500" />
-                                                        {DEALS.collectionBundle.name}
-                                                    </span>
-                                                    <span className="text-amber-600/70 ml-1 block text-xs">
-                                                        ${DEALS.collectionBundle.salePrice} x {count}
-                                                    </span>
-                                                </span>
-                                                <span className="font-medium text-amber-800">${DEALS.collectionBundle.salePrice * count}</span>
-                                            </div>
-                                        );
-                                    }
 
                                     const { product, size } = getProductAndSize(key);
                                     if (!product || !size) return null;
@@ -862,9 +854,18 @@ const Order = () => {
                                     <div className="flex justify-between text-sm items-center bg-green-50 -mx-2 px-2 py-1.5 rounded-lg">
                                         <span className="text-green-700 font-medium flex items-center gap-1.5">
                                             <Sparkles size={14} className="text-green-500" />
-                                            Launch Week Deal Applied
+                                            3-for-$27 Deal
                                         </span>
                                         <span className="font-bold text-green-600">-${mixMatchSavings}</span>
+                                    </div>
+                                )}
+                                {regularSavings > 0 && (
+                                    <div className="flex justify-between text-sm items-center bg-blue-50 -mx-2 px-2 py-1.5 rounded-lg">
+                                        <span className="text-blue-700 font-medium flex items-center gap-1.5">
+                                            <Sparkles size={14} className="text-blue-500" />
+                                            2-for-$15 Deal
+                                        </span>
+                                        <span className="font-bold text-blue-600">-${regularSavings}</span>
                                     </div>
                                 )}
                                 {!isPickup && (
@@ -888,16 +889,16 @@ const Order = () => {
                                 </div>
 
                                 {/* Total Savings Display */}
-                                {mixMatchSavings > 0 && (
+                                {totalSavings > 0 && (
                                     <div className="mt-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl px-4 py-3 text-center">
                                         <div className="flex items-center justify-center gap-2">
                                             <Sparkles size={16} className="text-green-500" />
                                             <span className="text-green-800 font-bold">
-                                                You're saving ${mixMatchSavings}!
+                                                You're saving ${totalSavings}!
                                             </span>
                                             <Sparkles size={16} className="text-green-500" />
                                         </div>
-                                        <p className="text-xs text-green-600 mt-1">with Launch Week deals</p>
+                                        <p className="text-xs text-green-600 mt-1">with exclusive limited time deals</p>
                                     </div>
                                 )}
 

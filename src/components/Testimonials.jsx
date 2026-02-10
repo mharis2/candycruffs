@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, CheckCircle, Send, MessageSquarePlus, PenTool, ChevronLeft, ChevronRight } from 'lucide-react';
 import Button from './ui/Button';
@@ -172,15 +172,25 @@ const Testimonials = () => {
     const [direction, setDirection] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
 
+    // Shuffle testimonials on mount so the order is randomized each visit
+    const shuffledTestimonials = useMemo(() => {
+        const arr = [...testimonials];
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }, []);
+
     const nextSlide = useCallback(() => {
         setDirection(1);
-        setCurrentIndex((prev) => (prev + 1) % testimonials.length);
-    }, []);
+        setCurrentIndex((prev) => (prev + 1) % shuffledTestimonials.length);
+    }, [shuffledTestimonials.length]);
 
     const prevSlide = useCallback(() => {
         setDirection(-1);
-        setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
-    }, []);
+        setCurrentIndex((prev) => (prev - 1 + shuffledTestimonials.length) % shuffledTestimonials.length);
+    }, [shuffledTestimonials.length]);
 
     // Auto-play (pauses on user interaction)
     useEffect(() => {
@@ -258,14 +268,14 @@ const Testimonials = () => {
                                 exit="exit"
                                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                             >
-                                <TestimonialCard testimonial={testimonials[currentIndex]} />
+                                <TestimonialCard testimonial={shuffledTestimonials[currentIndex]} />
                             </motion.div>
                         </AnimatePresence>
                     </div>
 
                     {/* Dot Indicators */}
                     <div className="flex justify-center gap-2 mt-8">
-                        {testimonials.map((_, index) => (
+                        {shuffledTestimonials.map((_, index) => (
                             <button
                                 key={index}
                                 onClick={() => {

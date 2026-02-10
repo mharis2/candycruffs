@@ -3,7 +3,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Button from './ui/Button';
 import Reveal from './ui/Reveal';
-import { ArrowRight, Star, Sparkles, PartyPopper, Gift } from 'lucide-react';
+import { ArrowRight, Star, Sparkles, Tag, Candy } from 'lucide-react';
 
 const Hero = () => {
     const ref = useRef(null);
@@ -32,14 +32,14 @@ const Hero = () => {
             </div>
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                {/* Grand Opening Banner */}
+                {/* Exclusive Deals Banner */}
                 <motion.div
                     initial={{ opacity: 0, y: -30, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="mb-8 lg:mb-12"
+                    className="mb-4 lg:mb-6"
                 >
-                    <div className="relative bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 rounded-2xl py-4 px-6 md:py-5 md:px-8 shadow-2xl border-2 border-amber-300 overflow-hidden">
+                    <div className="relative bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 rounded-2xl py-4 px-6 md:py-5 md:px-8 shadow-2xl border-2 border-purple-400/30 overflow-hidden">
                         {/* Animated Sparkle Background */}
                         <div className="absolute inset-0 overflow-hidden pointer-events-none">
                             {[...Array(8)].map((_, i) => (
@@ -57,7 +57,7 @@ const Hero = () => {
                                         repeat: Infinity,
                                         repeatDelay: 1
                                     }}
-                                    className="absolute text-amber-600/40"
+                                    className="absolute text-white/30"
                                     style={{
                                         left: `${10 + i * 12}%`,
                                         top: `${20 + (i % 3) * 25}%`
@@ -72,39 +72,67 @@ const Hero = () => {
                         <motion.div
                             animate={{ x: ['-100%', '200%'] }}
                             transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none"
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none"
                             style={{ width: '50%' }}
                         />
 
                         {/* Content */}
                         <div className="relative z-10 flex flex-col md:flex-row items-center justify-center gap-3 text-center">
                             <motion.div
-                                animate={{ rotate: [0, 15, -15, 0] }}
+                                animate={{ scale: [1, 1.2, 1] }}
                                 transition={{ duration: 2, repeat: Infinity }}
                             >
-                                <PartyPopper size={28} className="text-amber-700" />
+                                <Sparkles size={28} className="text-white" />
                             </motion.div>
                             <div>
-                                <h2 className="text-lg md:text-2xl lg:text-3xl font-display font-black text-amber-900 tracking-tight">
-                                    🎉 GRAND OPENING LAUNCH WEEK! 🎉
+                                <h2 className="text-lg md:text-2xl lg:text-3xl font-display font-black text-white tracking-tight">
+                                    ✨ EXCLUSIVE LIMITED TIME DEALS ✨
                                 </h2>
-                                <p className="text-amber-800 text-xs md:text-sm font-medium">
-                                    Exclusive deals & free delivery on orders $70+ • Limited time only!
+                                <p className="text-white/80 text-xs md:text-sm font-medium">
+                                    Stackable savings & free delivery on orders $70+ • Don't miss out!
                                 </p>
                             </div>
                             <motion.div
-                                animate={{ rotate: [0, -15, 15, 0] }}
-                                transition={{ duration: 2, repeat: Infinity }}
+                                animate={{ scale: [1, 1.2, 1] }}
+                                transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
                             >
-                                <Gift size={28} className="text-amber-700" />
+                                <Tag size={28} className="text-white" />
                             </motion.div>
                         </div>
 
                         {/* Decorative corners */}
-                        <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-amber-600/30 rounded-tl" />
-                        <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-amber-600/30 rounded-tr" />
-                        <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-amber-600/30 rounded-bl" />
-                        <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-amber-600/30 rounded-br" />
+                        <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-white/20 rounded-tl" />
+                        <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-white/20 rounded-tr" />
+                        <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-white/20 rounded-bl" />
+                        <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-white/20 rounded-br" />
+                    </div>
+                </motion.div>
+
+                {/* New Flavours Coming Soon Banner */}
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                    className="mb-8 lg:mb-12"
+                >
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl py-3 px-5 flex items-center justify-center gap-3 shadow-sm">
+                        <motion.span
+                            animate={{ rotate: [0, 10, -10, 0] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                            className="text-xl"
+                        >
+                            🍬
+                        </motion.span>
+                        <p className="text-amber-800 font-bold text-sm md:text-base">
+                            New Flavours Coming Soon!
+                        </p>
+                        <motion.span
+                            animate={{ rotate: [0, -10, 10, 0] }}
+                            transition={{ duration: 1.5, repeat: Infinity, delay: 0.3 }}
+                            className="text-xl"
+                        >
+                            🍬
+                        </motion.span>
                     </div>
                 </motion.div>
 

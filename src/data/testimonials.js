@@ -29,6 +29,26 @@ export const testimonials = [
         quote: "The prism pops are by far my favourite. Super crunchy, sour, and they melt in your mouth. 11/10!",
         rating: 5,
         verified: true
+    },
+    {
+        id: 5,
+        name: "Jasjot Hothi",
+        quote: "I got the prism pops and they are amazing! they're practically candy in chip form definitely gonna buy more flavours!!",
+        rating: 5,
+        verified: true
+    }, {
+        id: 6,
+        name: "Bint Salahdine",
+        quote: "First things first, the promised crunch is above and beyond, it's perfect. Favourite flavours so far are definitely Cola Crunch & Prism Pops. I shared it with a couple of gals and they're now on board to say the least. The crave never ends. ",
+        rating: 5,
+        verified: true
+    },
+    {
+        id: 7,
+        name: "Hashim I.",
+        quote: "This melted in my mouth as I ate all of the prism pops 10/10",
+        rating: 5,
+        verified: true
     }
 
 ];

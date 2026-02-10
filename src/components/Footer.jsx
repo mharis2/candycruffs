@@ -50,9 +50,9 @@ const Footer = () => {
                         © {new Date().getFullYear()} Candy Cruffs. All rights reserved.
                     </p>
                     <div className="flex gap-6">
-                        <a href="#" className="text-gray-400 hover:text-white transition-colors"><Instagram size={20} /></a>
+                        <a href="https://www.instagram.com/candycruffs" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors"><Instagram size={20} /></a>
                         <a href="#" className="text-gray-400 hover:text-white transition-colors"><Twitter size={20} /></a>
-                        <a href="#" className="text-gray-400 hover:text-white transition-colors"><Facebook size={20} /></a>
+                        <a href="https://www.facebook.com/Candy.Cruffs/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors"><Facebook size={20} /></a>
                     </div>
                 </div>
             </div>

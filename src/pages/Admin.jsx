@@ -377,29 +377,32 @@ const Admin = () => {
     // --- Inventory Actions ---
 
     const updateStock = async (sku, delta) => {
-        // Optimistic UI update could be done here, but we'll wait for server for safety
-        const { data: current, error: fetchError } = await supabase
-            .from('products')
-            .select('stock_qty')
-            .eq('sku', sku)
-            .single();
-
-        if (fetchError) {
-            alert('Error fetching current stock');
+        // Find current stock from local state
+        const currentProduct = products.find(p => p.sku === sku);
+        if (!currentProduct) {
+            alert('Product not found');
             return;
         }
 
-        const newQty = Math.max(0, current.stock_qty + delta);
+        const newQty = Math.max(0, currentProduct.stock_qty + delta);
 
+        // Optimistic UI update — immediately update local state
+        setProducts(prev => prev.map(p =>
+            p.sku === sku ? { ...p, stock_qty: newQty } : p
+        ));
+
+        // Persist to database
         const { error: updateError } = await supabase
             .from('products')
             .update({ stock_qty: newQty })
             .eq('sku', sku);
 
         if (updateError) {
+            // Revert optimistic update on failure
+            setProducts(prev => prev.map(p =>
+                p.sku === sku ? { ...p, stock_qty: currentProduct.stock_qty } : p
+            ));
             alert('Error updating stock');
-        } else {
-            fetchInventory();
         }
     };
 
@@ -620,7 +623,7 @@ const Admin = () => {
                     </div>
                 )}
 
-                {!loading && (
+                {!loading && activeTab === 'orders' && (
                     <div className="space-y-4 pt-8 border-t border-gray-200">
                         <h2 className="text-xl font-bold text-gray-400 flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-gray-300 block"></span>
