@@ -21,7 +21,9 @@ export const DEALS = {
             { productId: 'crystal-bear-bites', sku: 'CRYSTAL-BEAR-BITES-LRG', name: 'Crystal Bear Bites', sizeName: 'Large' },
             { productId: 'cola-fizz-crunch', sku: 'COLA-FIZZ-CRUNCH-LRG', name: 'Cola Fizz Crunch', sizeName: 'Large' },
             { productId: 'prism-pops', sku: 'PRISM-POPS', name: 'Prism Pops', sizeName: 'Bag' },
-            { productId: 'strawberry-sparkle-crunch', sku: 'STRAWBERRY-SPARKLE-CRUNCH-LRG', name: 'Strawberry Sparkle Crunch', sizeName: 'Large' }
+            { productId: 'strawberry-sparkle-crunch', sku: 'STRAWBERRY-SPARKLE-CRUNCH-LRG', name: 'Strawberry Sparkle Crunch', sizeName: 'Large' },
+            { productId: 'caramelts', sku: 'CARAMELTS-LRG', name: 'Caramelts', sizeName: 'Large' },
+            { productId: 'sour-prism-pops', sku: 'SOUR-PRISM-POPS', name: 'Sour Prism Pops', sizeName: 'Bag' }
         ],
         freeDeliveryEligible: false,
         active: true

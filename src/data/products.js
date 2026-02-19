@@ -1,5 +1,30 @@
 export const products = [
     {
+        id: 'caramelts',
+        name: 'Caramelts',
+        tagline: 'Classic caramels with a golden, melt-in-your-mouth crunch.',
+        description: 'Rich buttery caramels freeze dried into light, airy bites with a golden crunch that melts on your tongue.',
+        image: '/assets/caramelts.webp',
+        sizeComparisonImage: '/assets/caramelts-sizes.webp',
+        badges: ['NEW', 'CARAMEL', 'SWEET', 'CRUNCHY'],
+        sizes: [
+            { id: 'reg', name: 'Regular', weight: '50g', price: 8, sku: 'CARAMELTS-REG' },
+            { id: 'lrg', name: 'Large', weight: '120g', price: 10, sku: 'CARAMELTS-LRG' }
+        ]
+    },
+    {
+        id: 'sour-prism-pops',
+        name: 'Sour Prism Pops',
+        tagline: 'Classic rainbow with a sour, tangy twist.',
+        description: 'Your favorite rainbow candies hit with a sour punch — puffed up and freeze dried for an intense, tangy crunch.',
+        image: '/assets/sour-prism-pops.webp',
+        sizeComparisonImage: '/assets/prism-pop-size.webp',
+        badges: ['NEW', 'GELATIN-FREE', 'SOUR', 'RAINBOW'],
+        sizes: [
+            { id: 'std', name: 'Bag', price: 10, sku: 'SOUR-PRISM-POPS' }
+        ]
+    },
+    {
         id: 'shark-bite-crunch',
         name: 'Shark Bite Crunch',
         tagline: 'Shark gummies with a fierce, foamy crunch.',
@@ -28,11 +53,10 @@ export const products = [
     {
         id: 'prism-pops',
         name: 'Prism Pops',
-        // price removed, moved to sizes
         tagline: 'Classic rainbow, remade in crunch.',
         description: 'Your favorite rainbow candies, puffed up and freeze dried for an intense, crunchy bite.',
         image: '/assets/prism-pops.webp',
-        sizeComparisonImage: '/assets/prism-pop-size.webp', // User to provide
+        sizeComparisonImage: '/assets/prism-pop-size.webp',
         badges: ['GELATIN-FREE', 'SWEET', 'RAINBOW'],
         sizes: [
             { id: 'std', name: 'Bag', price: 10, sku: 'PRISM-POPS' }
@@ -51,8 +75,6 @@ export const products = [
             { id: 'lrg', name: 'Large', weight: '120g', price: 10, sku: 'CRYSTAL-BEAR-BITES-LRG' }
         ]
     },
-
-
     {
         id: 'cola-fizz-crunch',
         name: 'Cola Fizz Crunch',
@@ -80,3 +102,4 @@ export const products = [
         ]
     }
 ];
+

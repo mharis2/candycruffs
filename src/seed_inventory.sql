@@ -19,7 +19,14 @@ insert into products (sku, name, stock_qty) values
 
 -- Cola Fizz Crunch
 ('COLA-FIZZ-CRUNCH-REG', 'Cola Fizz Crunch (Regular)', 50),
-('COLA-FIZZ-CRUNCH-LRG', 'Cola Fizz Crunch (Large)', 30)
+('COLA-FIZZ-CRUNCH-LRG', 'Cola Fizz Crunch (Large)', 30),
+
+-- Caramelts
+('CARAMELTS-REG', 'Caramelts (Regular)', 50),
+('CARAMELTS-LRG', 'Caramelts (Large)', 30),
+
+-- Sour Prism Pops
+('SOUR-PRISM-POPS', 'Sour Prism Pops (Bag)', 50)
 
 on conflict (sku) do update 
 set stock_qty = EXCLUDED.stock_qty;

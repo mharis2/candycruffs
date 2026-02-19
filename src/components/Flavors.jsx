@@ -76,6 +76,7 @@ const FlavorCard = ({ product, index, stockMap }) => {
     }
 
     const isLimitedEdition = product.badges?.includes('LIMITED EDITION');
+    const isNew = product.badges?.includes('NEW');
 
     return (
         <motion.div
@@ -83,7 +84,9 @@ const FlavorCard = ({ product, index, stockMap }) => {
             onMouseLeave={handleMouseLeave}
             style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
             className={`group relative bg-white rounded-[2rem] shadow-lg hover:shadow-2xl transition-all duration-500 z-10 hover:z-20 ${isLimitedEdition
-                    ? 'border-2 border-amber-300 ring-2 ring-amber-200/50 shadow-amber-200/30'
+                ? 'border-2 border-amber-300 ring-2 ring-amber-200/50 shadow-amber-200/30'
+                : isNew
+                    ? 'border-2 border-cyan-300 ring-2 ring-cyan-200/50 shadow-cyan-200/30'
                     : 'border border-gray-100'
                 }`}
         >
@@ -93,6 +96,16 @@ const FlavorCard = ({ product, index, stockMap }) => {
                     <div className="relative">
                         <div className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-white px-4 py-1.5 rounded-full text-[10px] font-black tracking-wider shadow-lg shadow-amber-300/50 animate-pulse border-2 border-amber-300">
                             <span className="mr-1">✨</span> LIMITED EDITION <span className="ml-1">✨</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* NEW Flavor Corner Ribbon */}
+            {isNew && (
+                <div className="absolute -top-3 -right-3 z-50">
+                    <div className="relative">
+                        <div className="bg-gradient-to-r from-cyan-500 via-blue-500 to-cyan-500 text-white px-4 py-1.5 rounded-full text-[10px] font-black tracking-wider shadow-lg shadow-cyan-300/50 animate-pulse border-2 border-cyan-300">
+                            <span className="mr-1">🔥</span> NEW <span className="ml-1">🔥</span>
                         </div>
                     </div>
                 </div>
@@ -165,9 +178,9 @@ const FlavorCard = ({ product, index, stockMap }) => {
                         </div>
                     </motion.div>
 
-                    {/* Badges - Skip LIMITED EDITION as it has its own prominent display */}
+                    {/* Badges - Skip LIMITED EDITION and NEW as they have their own prominent display */}
                     <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
-                        {product.badges?.filter(badge => badge !== 'LIMITED EDITION').map((badge) => {
+                        {product.badges?.filter(badge => badge !== 'LIMITED EDITION' && badge !== 'NEW').map((badge) => {
                             const badgeColors = {
                                 'HALAL': 'bg-emerald-50 text-emerald-700 border-emerald-100',
                                 'GELATIN-FREE': 'bg-teal-50 text-teal-700 border-teal-100',
@@ -183,6 +196,7 @@ const FlavorCard = ({ product, index, stockMap }) => {
                                 'FIZZY': 'bg-violet-50 text-violet-700 border-violet-100',
                                 'RAINBOW': 'bg-indigo-50 text-indigo-700 border-indigo-100',
                                 'BERRY': 'bg-rose-50 text-rose-700 border-rose-100',
+                                'CARAMEL': 'bg-yellow-50 text-yellow-800 border-yellow-200',
                             };
 
                             const colorClass = badgeColors[badge] || 'bg-gray-50 text-gray-700 border-gray-100';
