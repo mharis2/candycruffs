@@ -49,6 +49,20 @@ export const testimonials = [
         quote: "This melted in my mouth as I ate all of the prism pops 10/10",
         rating: 5,
         verified: true
+    },
+    {
+        id: 8,
+        name: "Yusra Q.",
+        quote: "It was amazing! We've never had anything like this before. The flavours are so good and the crunch is perfect in every bite. Truly delicious and fresh—everyone in our family really enjoyed it. We will definitely be ordering again, inshaAllah! 😍",
+        rating: 5,
+        verified: true
+    },
+    {
+        id: 9,
+        name: "Haadia Q.",
+        quote: "Absolutely loved it! Everything was so fresh and delicious. The crunch and flavours were perfectly balanced, and it really stood out from anything we've tried before. We all really enjoyed it and would highly recommend it. Will definitely order again, inshaAllah!",
+        rating: 5,
+        verified: true
     }
 
 ];
